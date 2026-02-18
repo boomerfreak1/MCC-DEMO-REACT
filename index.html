@@ -38,7 +38,7 @@ const STEPS = [
   { id:5, title:"Localize Assets", time:"24\u201332h", humanTime:"45m", humanAction:"Reviews localized drafts", aiSummary:"Localized versions of creatives for North America\u2019s top non-English language communities \u2014 Spanish (US), French (CA), Punjabi, Simplified Chinese, and Haitian Creole" },
   { id:6, title:"Launch Campaign", time:"32\u201336h", humanTime:"45m", humanAction:"Approves deployment, bids, and campaign launch", aiSummary:"Campaign launch plan with bid strategies" },
   { id:7, title:"Optimize Performance", time:"36h+", humanTime:"70m/wk", humanAction:"Reviews anomalies, insights 2x/week, strategy weekly", aiSummary:"Campaign outliers / anomalies with suggested media or creative modifications" },
-  { id:8, title:"Deliver Leads", time:"Ongoing", humanTime:"Ongoing", humanAction:"Follows up on qualified sales leads", aiSummary:"Leads routed to appropriate XYZ and partner sellers with recommended next steps with content" },
+  { id:8, title:"Deliver Leads", time:"Ongoing", humanTime:"Ongoing", humanAction:"Follows up on qualified sales leads", aiSummary:"Leads routed to appropriate IBM and partner sellers with recommended next steps with content" },
 ];
 
 const accountData = [
@@ -75,7 +75,7 @@ const creativeVariants = [
   { id:"A", headline:"Transform Productivity with AI That Understands Your Business", format:"Video 30s", predicted:3.2, legal:"Clear", brand:96 },
   { id:"B", headline:"From Data Overload to AI-Driven Decisions in Weeks", format:"Static Banner", predicted:2.8, legal:"Clear", brand:94 },
   { id:"C", headline:"Your Competitors Are Already Using AI \u2014 Are You?", format:"Carousel", predicted:4.1, legal:"Review", brand:88 },
-  { id:"D", headline:"XYZ Platform: Enterprise AI Built for Regulated Industries", format:"Video 15s", predicted:3.6, legal:"Clear", brand:97 },
+  { id:"D", headline:"IBM Platform: Enterprise AI Built for Regulated Industries", format:"Video 15s", predicted:3.6, legal:"Clear", brand:97 },
   { id:"E", headline:"Cut Report Generation Time by 80% with AI Assistants", format:"Static Banner", predicted:2.4, legal:"Clear", brand:92 },
 ];
 
@@ -225,40 +225,66 @@ function Step8Screen() {
 
 // --- Loading animations ---
 const LOADING_CONFIGS = [
-  { label:"Scanning account databases", sub:"Analyzing propensity signals across 916 accounts...", color:"#2563eb" },
-  { label:"Matching partner capabilities", sub:"Evaluating fit scores for 6 strategic partners...", color:"#7c3aed" },
-  { label:"Segmenting target audiences", sub:"Clustering 87,000 profiles across 5 segments...", color:"#059669" },
-  { label:"Generating creative variants", sub:"Producing and testing 5 variants against synthetic audiences...", color:"#0891b2" },
-  { label:"Translating and localizing", sub:"Adapting 44 assets across 4 language markets...", color:"#d97706" },
-  { label:"Configuring deployment", sub:"Setting bid strategies across 5 platforms...", color:"#dc2626" },
-  { label:"Analyzing performance data", sub:"Processing 4.2M impressions for anomalies...", color:"#059669" },
-  { label:"Routing qualified leads", sub:"Scoring and assigning 47 leads to sellers...", color:"#1d4ed8" },
+  { label:"Scanning account databases", sub:"Analyzing propensity signals across 916 accounts...", color:"#2563eb", steps:["Aggregating account data","Analyzing intent signals","Scoring accounts against ICP","Building lookalike profiles","Preparing target account list"] },
+  { label:"Matching partner capabilities", sub:"Evaluating fit scores for 6 strategic partners...", color:"#7c3aed", steps:["Analyzing partner performance","Segmenting by qualification and effectiveness","Generating authorized partner recommendations","Generating partner selling guidance"] },
+  { label:"Segmenting target audiences", sub:"Clustering 87,000 profiles across 5 segments...", color:"#059669", steps:["Defining segments","Identifying target channels and engagement behaviors","Translating to platform targeting criteria","Testing with synthetic profiles","Expanding audiences to fulfill campaign objectives"] },
+  { label:"Generating creative variants", sub:"Producing and testing 5 variants against synthetic audiences...", color:"#0891b2", steps:["Creating copy/visual variants leveraging DAM assets","Testing with synthetic audience profiles","Ranking by projected performance","QA\u2019ing creatives","Assessing and classifying legal risk","Generating metadata/tags for DAM"] },
+  { label:"Translating and localizing", sub:"Adapting 44 assets across 4 language markets...", color:"#d97706", steps:["Extracting metadata","Translating and transcreating content","Adjusting layouts","Generating metadata/tags for DAM"] },
+  { label:"Configuring deployment", sub:"Setting bid strategies across 5 platforms...", color:"#dc2626", steps:["Deploying audiences to platforms","Generating bid strategies","Launching campaign across platforms"] },
+  { label:"Analyzing performance data", sub:"Processing 4.2M impressions for anomalies...", color:"#059669", steps:["Streaming and normalizing metrics across platforms","Optimizing variants and bidding in real time","Flagging major anomalies","Classifying creative as reuse/rework/suppress"] },
+  { label:"Routing qualified leads", sub:"Scoring and assigning 47 leads to sellers...", color:"#1d4ed8", steps:["Scoring and qualifying leads","Routing to appropriate sellers","Generating recommended next steps","Attaching relevant content"] },
 ];
 
-function LoaderShell({ children, label, sub, color, progress }) {
-  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 20px",gap:24}}>
-    <div style={{position:"relative",width:120,height:120}}>{children}</div>
-    <div style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:12,color:"#94a3b8",maxWidth:320}}>{sub}</div></div>
-    <div style={{width:240,height:4,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
-    <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
+function ProcessingSteps({ steps, color }) {
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [activeTyping, setActiveTyping] = useState(0);
+  useEffect(() => {
+    if (!steps || steps.length === 0) return;
+    setVisibleCount(0);
+    setActiveTyping(0);
+    const interval = 4500 / (steps.length + 1);
+    const timers = steps.map((_, i) => setTimeout(() => { setVisibleCount(i + 1); setActiveTyping(i); }, interval * (i + 1)));
+    return () => timers.forEach(clearTimeout);
+  }, [steps]);
+  if (!steps || steps.length === 0) return null;
+  return (<div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-start",width:340,minHeight:steps.length*26}}>
+    {steps.map((s, i) => {
+      const done = i < visibleCount - 1;
+      const active = i === visibleCount - 1;
+      const hidden = i >= visibleCount;
+      return (<div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,height:20,opacity:hidden?0:1,transform:hidden?"translateY(6px)":"translateY(0)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
+        <div style={{width:16,height:16,borderRadius:8,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,backgroundColor:done?color:active?color+"18":"#e5e7eb",color:done?"#fff":active?color:"#94a3b8",border:active?"1.5px solid "+color:"none",transition:"all 0.3s ease"}}>{done?"\u2713":active?<div style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"pulse-glow 1s infinite"}}/>:<span style={{fontSize:7}}>{i+1}</span>}</div>
+        <span style={{color:done?"#64748b":active?"#0f172a":"#94a3b8",fontWeight:active?600:400,transition:"all 0.3s ease"}}>{s}{active && <span style={{animation:"typing-dots 1.2s infinite"}}>...</span>}</span>
+      </div>);
+    })}
   </div>);
 }
 
-function Loader1({progress}){const cfg=LOADING_CONFIGS[0];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1px solid #bfdbfe",overflow:"hidden",position:"relative"}}><div style={{position:"absolute",left:0,right:0,height:2,backgroundColor:"#2563eb",opacity:.6,animation:"scan-line 1.5s ease-in-out infinite",zIndex:2}}/>{[0,1,2,3].map(col=><div key={col} style={{position:"absolute",left:10+col*28,top:0,bottom:0,overflow:"hidden",width:22}}><div style={{animation:"number-scroll "+(1.8+col*.3)+"s linear infinite",fontFamily:"monospace",fontSize:11,color:"#2563eb",opacity:.6+col*.1,lineHeight:"18px"}}>{Array.from({length:20},(_,i)=><div key={i}>{String(Math.floor(Math.random()*100)).padStart(2,"0")}</div>)}</div></div>)}</div></LoaderShell>);}
+function LoaderShell({ children, label, sub, color, progress, steps }) {
+  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"48px 20px",gap:20}}>
+    <div style={{position:"relative",width:120,height:120}}>{children}</div>
+    <div style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:12,color:"#94a3b8",maxWidth:320}}>{sub}</div></div>
+    <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
+    <div style={{width:280,height:4,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
+    <ProcessingSteps steps={steps} color={color}/>
+  </div>);
+}
 
-function Loader2({progress}){const cfg=LOADING_CONFIGS[1],colors=["#2563eb","#7c3aed","#059669","#f59e0b","#dc2626","#0891b2"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,position:"relative"}}><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:28,height:28,borderRadius:14,background:"linear-gradient(135deg,#7c3aed,#a78bfa)",boxShadow:"0 0 20px rgba(124,58,237,0.3)",animation:"pulse-glow 2s infinite"}}/>{colors.map((c,i)=><div key={i} style={{position:"absolute",top:"50%",left:"50%",width:0,height:0}}><div style={{animation:"orbit "+(3+i*.4)+"s "+i*.3+"s linear infinite"}}><div style={{width:12,height:12,borderRadius:6,backgroundColor:c,boxShadow:"0 0 8px "+c+"44",marginLeft:-6,marginTop:-6}}/></div></div>)}</div></LoaderShell>);}
+function Loader1({progress}){const cfg=LOADING_CONFIGS[0];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1px solid #bfdbfe",overflow:"hidden",position:"relative"}}><div style={{position:"absolute",left:0,right:0,height:2,backgroundColor:"#2563eb",opacity:.6,animation:"scan-line 1.5s ease-in-out infinite",zIndex:2}}/>{[0,1,2,3].map(col=><div key={col} style={{position:"absolute",left:10+col*28,top:0,bottom:0,overflow:"hidden",width:22}}><div style={{animation:"number-scroll "+(1.8+col*.3)+"s linear infinite",fontFamily:"monospace",fontSize:11,color:"#2563eb",opacity:.6+col*.1,lineHeight:"18px"}}>{Array.from({length:20},(_,i)=><div key={i}>{String(Math.floor(Math.random()*100)).padStart(2,"0")}</div>)}</div></div>)}</div></LoaderShell>);}
 
-function Loader3({progress}){const cfg=LOADING_CONFIGS[2],groups=[{x:25,y:30,color:"#2563eb"},{x:75,y:25,color:"#7c3aed"},{x:50,y:70,color:"#059669"},{x:90,y:65,color:"#f59e0b"}];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1px solid #bbf7d0",position:"relative",overflow:"hidden"}}>{groups.map((g,gi)=>Array.from({length:5},(_,di)=><div key={gi+"-"+di} style={{position:"absolute",left:g.x+(di-2)*5,top:g.y+(di%3-1)*6,width:8,height:8,borderRadius:4,backgroundColor:g.color,opacity:.5+di*.1,animation:"dot-cluster "+(1.5+di*.2)+"s "+(gi*.2+di*.1)+"s ease-in-out infinite"}}/>))}</div></LoaderShell>);}
+function Loader2({progress}){const cfg=LOADING_CONFIGS[1],colors=["#2563eb","#7c3aed","#059669","#f59e0b","#dc2626","#0891b2"];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,position:"relative"}}><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:28,height:28,borderRadius:14,background:"linear-gradient(135deg,#7c3aed,#a78bfa)",boxShadow:"0 0 20px rgba(124,58,237,0.3)",animation:"pulse-glow 2s infinite"}}/>{colors.map((c,i)=><div key={i} style={{position:"absolute",top:"50%",left:"50%",width:0,height:0}}><div style={{animation:"orbit "+(3+i*.4)+"s "+i*.3+"s linear infinite"}}><div style={{width:12,height:12,borderRadius:6,backgroundColor:c,boxShadow:"0 0 8px "+c+"44",marginLeft:-6,marginTop:-6}}/></div></div>)}</div></LoaderShell>);}
 
-function Loader4({progress}){const cfg=LOADING_CONFIGS[3],g=["#1d4ed8","#7c3aed","#059669","#0891b2","#d97706"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"#f8fafc",border:"1px solid #e2e8f0",overflow:"hidden",display:"grid",gridTemplateColumns:"repeat(8,1fr)",gridTemplateRows:"repeat(8,1fr)",gap:1,padding:4}}>{Array.from({length:64},(_,i)=>{const row=Math.floor(i/8),col=i%8,delay=row*.08+col*.06;return<div key={i} style={{borderRadius:2,backgroundColor:g[i%g.length],animation:"pulse-glow "+(1.2+(i%4)*.2)+"s "+delay+"s infinite",opacity:0,animationFillMode:"both"}}/>;})}</div></LoaderShell>);}
+function Loader3({progress}){const cfg=LOADING_CONFIGS[2],groups=[{x:25,y:30,color:"#2563eb"},{x:75,y:25,color:"#7c3aed"},{x:50,y:70,color:"#059669"},{x:90,y:65,color:"#f59e0b"}];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1px solid #bbf7d0",position:"relative",overflow:"hidden"}}>{groups.map((g,gi)=>Array.from({length:5},(_,di)=><div key={gi+"-"+di} style={{position:"absolute",left:g.x+(di-2)*5,top:g.y+(di%3-1)*6,width:8,height:8,borderRadius:4,backgroundColor:g.color,opacity:.5+di*.1,animation:"dot-cluster "+(1.5+di*.2)+"s "+(gi*.2+di*.1)+"s ease-in-out infinite"}}/>))}</div></LoaderShell>);}
 
-function Loader5({progress}){const cfg=LOADING_CONFIGS[4],langs=[{chars:"EN",bg:"#e0e7ff",color:"#4338ca"},{chars:"ES",bg:"#fef3c7",color:"#92400e"},{chars:"FR",bg:"#fce7f3",color:"#9d174d"},{chars:"PA",bg:"#d1fae5",color:"#065f46"},{chars:"ZH",bg:"#fee2e2",color:"#991b1b"}];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center",justifyContent:"center",padding:10}}>{langs.map((l,i)=><div key={i} style={{width:46,height:34,borderRadius:8,backgroundColor:l.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:l.color,animation:"morph-text 2s "+i*.3+"s infinite",border:"1px solid "+l.color+"22"}}>{l.chars}</div>)}<div style={{width:46,height:34,borderRadius:8,border:"2px dashed #cbd5e1",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:14,height:14,borderRadius:7,border:"2px solid #94a3b8",borderTopColor:"transparent",animation:"spin-ring .8s linear infinite"}}/></div></div></LoaderShell>);}
+function Loader4({progress}){const cfg=LOADING_CONFIGS[3],g=["#1d4ed8","#7c3aed","#059669","#0891b2","#d97706"];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,borderRadius:16,background:"#f8fafc",border:"1px solid #e2e8f0",overflow:"hidden",display:"grid",gridTemplateColumns:"repeat(8,1fr)",gridTemplateRows:"repeat(8,1fr)",gap:1,padding:4}}>{Array.from({length:64},(_,i)=>{const row=Math.floor(i/8),col=i%8,delay=row*.08+col*.06;return<div key={i} style={{borderRadius:2,backgroundColor:g[i%g.length],animation:"pulse-glow "+(1.2+(i%4)*.2)+"s "+delay+"s infinite",opacity:0,animationFillMode:"both"}}/>;})}</div></LoaderShell>);}
 
-function Loader6({progress}){const cfg=LOADING_CONFIGS[5],platforms=["#2563eb","#7c3aed","#059669","#f59e0b","#ef4444"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#0f172a,#1e293b)",border:"1px solid #334155",display:"flex",alignItems:"flex-end",justifyContent:"center",gap:6,padding:"12px 14px",position:"relative"}}><div style={{position:"absolute",top:12,left:0,right:0,textAlign:"center",fontSize:10,color:"#60a5fa",fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>LAUNCH</div>{platforms.map((c,i)=><div key={i} style={{width:12,height:60,borderRadius:3,backgroundColor:c,transformOrigin:"bottom",animation:"bar-grow "+(1.2+i*.15)+"s "+i*.15+"s ease-in-out infinite"}}/>)}</div></LoaderShell>);}
+function Loader5({progress}){const cfg=LOADING_CONFIGS[4],langs=[{chars:"EN",bg:"#e0e7ff",color:"#4338ca"},{chars:"ES",bg:"#fef3c7",color:"#92400e"},{chars:"FR",bg:"#fce7f3",color:"#9d174d"},{chars:"PA",bg:"#d1fae5",color:"#065f46"},{chars:"ZH",bg:"#fee2e2",color:"#991b1b"}];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center",justifyContent:"center",padding:10}}>{langs.map((l,i)=><div key={i} style={{width:46,height:34,borderRadius:8,backgroundColor:l.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:l.color,animation:"morph-text 2s "+i*.3+"s infinite",border:"1px solid "+l.color+"22"}}>{l.chars}</div>)}<div style={{width:46,height:34,borderRadius:8,border:"2px dashed #cbd5e1",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:14,height:14,borderRadius:7,border:"2px solid #94a3b8",borderTopColor:"transparent",animation:"spin-ring .8s linear infinite"}}/></div></div></LoaderShell>);}
 
-function Loader7({progress}){const cfg=LOADING_CONFIGS[6];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"#fff",border:"1px solid #e2e8f0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,padding:8}}>{[{color:"#2563eb",val:"4.2M"},{color:"#059669",val:"2.8%"},{color:"#7c3aed",val:"$127"},{color:"#f59e0b",val:"342"}].map((m,i)=><div key={i} style={{borderRadius:6,backgroundColor:m.color+"0a",border:"1px solid "+m.color+"22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:4,animation:"pulse-glow 1.5s "+i*.3+"s infinite"}}><div style={{fontSize:12,fontWeight:800,color:m.color}}>{m.val}</div><div style={{width:"80%",height:2,backgroundColor:m.color,borderRadius:1,marginTop:3,opacity:.4}}><div style={{height:"100%",backgroundColor:m.color,borderRadius:1,animation:"progress-sweep 2s "+i*.2+"s infinite"}}/></div></div>)}</div></LoaderShell>);}
+function Loader6({progress}){const cfg=LOADING_CONFIGS[5],platforms=["#2563eb","#7c3aed","#059669","#f59e0b","#ef4444"];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#0f172a,#1e293b)",border:"1px solid #334155",display:"flex",alignItems:"flex-end",justifyContent:"center",gap:6,padding:"12px 14px",position:"relative"}}><div style={{position:"absolute",top:12,left:0,right:0,textAlign:"center",fontSize:10,color:"#60a5fa",fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>LAUNCH</div>{platforms.map((c,i)=><div key={i} style={{width:12,height:60,borderRadius:3,backgroundColor:c,transformOrigin:"bottom",animation:"bar-grow "+(1.2+i*.15)+"s "+i*.15+"s ease-in-out infinite"}}/>)}</div></LoaderShell>);}
 
-function Loader8({progress}){const cfg=LOADING_CONFIGS[7];return(<LoaderShell {...cfg} progress={progress}><svg width="120" height="120" viewBox="0 0 120 120"><rect x="0" y="0" width="120" height="120" rx="16" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1"/><circle cx="60" cy="60" r="14" fill="#2563eb" opacity="0.9"><animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite"/></circle><text x="60" y="64" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700">AI</text>{[{x:20,y:20,color:"#dc2626"},{x:100,y:20,color:"#059669"},{x:20,y:100,color:"#7c3aed"},{x:100,y:100,color:"#f59e0b"}].map((t,i)=><g key={i}><line x1="60" y1="60" x2={t.x} y2={t.y} stroke={t.color} strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4"><animate attributeName="stroke-dashoffset" values="200;0" dur={(2+i*.3)+"s"} repeatCount="indefinite"/></line><circle cx={t.x} cy={t.y} r="8" fill={t.color} opacity="0.8"><animate attributeName="opacity" values="0.4;0.9;0.4" dur={(1.5+i*.2)+"s"} begin={i*.3+"s"} repeatCount="indefinite"/></circle></g>)}</svg></LoaderShell>);}
+function Loader7({progress}){const cfg=LOADING_CONFIGS[6];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><div style={{width:120,height:120,borderRadius:16,background:"#fff",border:"1px solid #e2e8f0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,padding:8}}>{[{color:"#2563eb",val:"4.2M"},{color:"#059669",val:"2.8%"},{color:"#7c3aed",val:"$127"},{color:"#f59e0b",val:"342"}].map((m,i)=><div key={i} style={{borderRadius:6,backgroundColor:m.color+"0a",border:"1px solid "+m.color+"22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:4,animation:"pulse-glow 1.5s "+i*.3+"s infinite"}}><div style={{fontSize:12,fontWeight:800,color:m.color}}>{m.val}</div><div style={{width:"80%",height:2,backgroundColor:m.color,borderRadius:1,marginTop:3,opacity:.4}}><div style={{height:"100%",backgroundColor:m.color,borderRadius:1,animation:"progress-sweep 2s "+i*.2+"s infinite"}}/></div></div>)}</div></LoaderShell>);}
+
+function Loader8({progress}){const cfg=LOADING_CONFIGS[7];return(<LoaderShell {...cfg} progress={progress} steps={cfg.steps}><svg width="120" height="120" viewBox="0 0 120 120"><rect x="0" y="0" width="120" height="120" rx="16" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1"/><circle cx="60" cy="60" r="14" fill="#2563eb" opacity="0.9"><animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite"/></circle><text x="60" y="64" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700">AI</text>{[{x:20,y:20,color:"#dc2626"},{x:100,y:20,color:"#059669"},{x:20,y:100,color:"#7c3aed"},{x:100,y:100,color:"#f59e0b"}].map((t,i)=><g key={i}><line x1="60" y1="60" x2={t.x} y2={t.y} stroke={t.color} strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4"><animate attributeName="stroke-dashoffset" values="200;0" dur={(2+i*.3)+"s"} repeatCount="indefinite"/></line><circle cx={t.x} cy={t.y} r="8" fill={t.color} opacity="0.8"><animate attributeName="opacity" values="0.4;0.9;0.4" dur={(1.5+i*.2)+"s"} begin={i*.3+"s"} repeatCount="indefinite"/></circle></g>)}</svg></LoaderShell>);}
 
 const STEP_SCREENS = [Step1Screen,Step2Screen,Step3Screen,Step4Screen,Step5Screen,Step6Screen,Step7Screen,Step8Screen];
 const STEP_LOADERS = [Loader1,Loader2,Loader3,Loader4,Loader5,Loader6,Loader7,Loader8];
@@ -274,9 +300,9 @@ function App() {
     setAnimKey(k => k + 1);
     setLoading(true);
     setProgress(0);
-    const steps = [{pct:25,delay:300},{pct:55,delay:700},{pct:80,delay:1200},{pct:95,delay:1600},{pct:100,delay:1900}];
+    const steps = [{pct:10,delay:400},{pct:25,delay:1000},{pct:40,delay:1800},{pct:55,delay:2500},{pct:70,delay:3200},{pct:85,delay:3900},{pct:95,delay:4400},{pct:100,delay:4700}];
     const timers = steps.map(s => setTimeout(() => setProgress(s.pct), s.delay));
-    const doneTimer = setTimeout(() => setLoading(false), 2200);
+    const doneTimer = setTimeout(() => setLoading(false), 5000);
     return () => { timers.forEach(clearTimeout); clearTimeout(doneTimer); };
   }, [activeStep]);
 
@@ -287,7 +313,7 @@ function App() {
   return (
     <div style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",minHeight:"100vh",background:"linear-gradient(180deg,#f0f4f8 0%,#e2e8f0 100%)",color:"#0f172a"}}>
       <div style={{background:"linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",padding:"24px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>XYZ Marketing &bull; Agentic Workflow</div><div style={{fontSize:22,fontWeight:800,color:"#fff",marginTop:4,letterSpacing:"-0.02em"}}>Pipeline Gap Response &mdash; AI Productivity Software, North America</div></div>
+        <div><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>IBM Marketing &bull; Agentic Workflow</div><div style={{fontSize:22,fontWeight:800,color:"#fff",marginTop:4,letterSpacing:"-0.02em"}}>Pipeline Gap Response &mdash; AI Productivity Software, North America</div></div>
         <div style={{padding:"8px 16px",borderRadius:8,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.25)"}}><div style={{fontSize:10,color:"#93c5fd",fontWeight:600,textTransform:"uppercase"}}>Trigger</div><div style={{fontSize:13,color:"#bfdbfe",fontWeight:600,marginTop:2}}>30% pipeline gap detected</div></div>
       </div>
 
@@ -296,7 +322,7 @@ function App() {
           {STEPS.map((s,i) => {
             const isActive = i === activeStep, isPast = i < activeStep;
             return (<button key={i} onClick={() => setActiveStep(i)} style={{flex:"1 1 0",minWidth:120,padding:"10px 12px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",background:isActive?"#fff":isPast?"rgba(37,99,235,0.06)":"transparent",transition:"all 0.2s ease",boxShadow:isActive?"0 -2px 8px rgba(0,0,0,0.06)":"none",position:"relative"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}><span style={{fontSize:16}}>{STEP_ICONS[i]}</span><span style={{fontSize:12,fontWeight:isActive?800:600,color:isActive?"#1d4ed8":isPast?"#2563eb":"#94a3b8",whiteSpace:"nowrap"}}>{s.id}. {s.title}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}><span style={{fontSize:12,fontWeight:isActive?800:600,color:isActive?"#1d4ed8":isPast?"#2563eb":"#94a3b8",whiteSpace:"nowrap"}}>{s.id}. {s.title}</span></div>
               <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.time}</div>
               {isActive && <div style={{position:"absolute",bottom:0,left:12,right:12,height:3,backgroundColor:"#2563eb",borderRadius:"3px 3px 0 0"}}/>}
             </button>);
