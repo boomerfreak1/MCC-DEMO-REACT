@@ -242,18 +242,18 @@ function ProcessingSteps({ steps, color }) {
     if (!steps || steps.length === 0) return;
     setVisibleCount(0);
     setActiveTyping(0);
-    const interval = 4500 / (steps.length + 1);
+    const interval = 18000 / (steps.length + 1);
     const timers = steps.map((_, i) => setTimeout(() => { setVisibleCount(i + 1); setActiveTyping(i); }, interval * (i + 1)));
     return () => timers.forEach(clearTimeout);
   }, [steps]);
   if (!steps || steps.length === 0) return null;
-  return (<div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-start",width:340,minHeight:steps.length*26}}>
+  return (<div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-start",width:"100%",minHeight:steps.length*34}}>
     {steps.map((s, i) => {
       const done = i < visibleCount - 1;
       const active = i === visibleCount - 1;
       const hidden = i >= visibleCount;
-      return (<div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,height:20,opacity:hidden?0:1,transform:hidden?"translateY(6px)":"translateY(0)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
-        <div style={{width:16,height:16,borderRadius:8,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,backgroundColor:done?color:active?color+"18":"#e5e7eb",color:done?"#fff":active?color:"#94a3b8",border:active?"1.5px solid "+color:"none",transition:"all 0.3s ease"}}>{done?"\u2713":active?<div style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"pulse-glow 1s infinite"}}/>:<span style={{fontSize:7}}>{i+1}</span>}</div>
+      return (<div key={i} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,height:26,opacity:hidden?0:1,transform:hidden?"translateY(6px)":"translateY(0)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
+        <div style={{width:22,height:22,borderRadius:11,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,backgroundColor:done?color:active?color+"18":"#e5e7eb",color:done?"#fff":active?color:"#94a3b8",border:active?"2px solid "+color:"none",transition:"all 0.3s ease"}}>{done?"\u2713":active?<div style={{width:8,height:8,borderRadius:4,backgroundColor:color,animation:"pulse-glow 1s infinite"}}/>:<span style={{fontSize:9}}>{i+1}</span>}</div>
         <span style={{color:done?"#64748b":active?"#0f172a":"#94a3b8",fontWeight:active?600:400,transition:"all 0.3s ease"}}>{s}{active && <span style={{animation:"typing-dots 1.2s infinite"}}>...</span>}</span>
       </div>);
     })}
@@ -262,11 +262,13 @@ function ProcessingSteps({ steps, color }) {
 
 function LoaderShell({ children, label, sub, color, progress, steps }) {
   return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"48px 20px",gap:20}}>
-    <div style={{position:"relative",width:120,height:120}}>{children}</div>
-    <div style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:12,color:"#94a3b8",maxWidth:320}}>{sub}</div></div>
+    <div style={{position:"relative",width:132,height:132,transform:"scale(1.1)",transformOrigin:"center"}}>{children}</div>
+    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:13,color:"#94a3b8",maxWidth:360}}>{sub}</div></div>
     <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
-    <div style={{width:280,height:4,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
-    <ProcessingSteps steps={steps} color={color}/>
+    <div style={{width:420,display:"flex",flexDirection:"column",gap:16}}>
+      <div style={{width:"100%",height:5,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
+      <ProcessingSteps steps={steps} color={color}/>
+    </div>
   </div>);
 }
 
@@ -322,9 +324,9 @@ function App() {
     setAnimKey(k => k + 1);
     setLoading(true);
     setProgress(0);
-    const steps = [{pct:10,delay:400},{pct:25,delay:1000},{pct:40,delay:1800},{pct:55,delay:2500},{pct:70,delay:3200},{pct:85,delay:3900},{pct:95,delay:4400},{pct:100,delay:4700}];
+    const steps = [{pct:5,delay:800},{pct:12,delay:2000},{pct:22,delay:4000},{pct:35,delay:6000},{pct:48,delay:8000},{pct:60,delay:10000},{pct:72,delay:12000},{pct:82,delay:14000},{pct:90,delay:16000},{pct:96,delay:18000},{pct:100,delay:19500}];
     const timers = steps.map(s => setTimeout(() => setProgress(s.pct), s.delay));
-    const doneTimer = setTimeout(() => setLoading(false), 5000);
+    const doneTimer = setTimeout(() => setLoading(false), 20000);
     return () => { timers.forEach(clearTimeout); clearTimeout(doneTimer); };
   }, [activeStep]);
 
