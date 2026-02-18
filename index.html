@@ -20,6 +20,8 @@
     @keyframes spin-ring { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
     @keyframes typing-dots { 0%,20%{opacity:.2} 40%{opacity:1} 60%,100%{opacity:.2} }
     @keyframes progress-sweep { 0%{width:0%} 60%{width:85%} 100%{width:100%} }
+    .hide-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    .hide-scrollbar::-webkit-scrollbar { display:none; }
   </style>
 </head>
 <body>
@@ -28,7 +30,17 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useCallback } = React;
+
+function useIsMobile(breakpoint=480) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= breakpoint);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= breakpoint);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return isMobile;
+}
 
 const STEPS = [
   { id:1, title:"Identify Account Targets", time:"0\u20132h", humanTime:"15m", humanAction:"Approves target account list", aiSummary:"62 Named accounts and 854 Select accounts with high propensity for AI productivity software" },
@@ -155,71 +167,80 @@ function DonutChart({ segments, size=120 }) {
 }
 
 function SummaryCard({ label, value, sub, color }) {
-  return <div style={cardStyle}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</div><div style={{fontSize:28,fontWeight:800,color,marginTop:2,lineHeight:1}}>{value}</div><div style={{fontSize:12,color:"#64748b",marginTop:4}}>{sub}</div></div>;
+  const m = useIsMobile();
+  return <div style={{...cardStyle,padding:m?14:18}}><div style={{fontSize:m?10:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</div><div style={{fontSize:m?22:28,fontWeight:800,color,marginTop:2,lineHeight:1}}>{value}</div><div style={{fontSize:m?11:12,color:"#64748b",marginTop:4}}>{sub}</div></div>;
 }
 
 // --- Step screens ---
 function Step1Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Named Accounts" value="62" sub="High-priority targets" color="#1d4ed8"/><SummaryCard label="Select Accounts" value="854" sub="Propensity-scored" color="#7c3aed"/><SummaryCard label="Avg. Propensity Score" value="84" sub="Out of 100" color="#059669"/></div>
-    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Account","Type","Propensity","Intent Signals","Industry"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{accountData.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.name}</span></td><td style={tdStyle}><Badge label={a.type} variant={a.type.toLowerCase()}/></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:8}}><ProgressBar value={a.score} color={a.score>85?"#2563eb":"#7c3aed"}/><span style={{fontSize:12,fontWeight:700,color:"#334155",minWidth:24}}>{a.score}</span></div></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.signals}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.industry}</span></td></tr>)}</tbody></table></div>
-    <div style={{fontSize:12,color:"#94a3b8",textAlign:"right"}}>Showing 10 of 916 accounts &bull; Sorted by propensity score</div>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Named Accounts" value="62" sub="High-priority targets" color="#1d4ed8"/><SummaryCard label="Select Accounts" value="854" sub="Propensity-scored" color="#7c3aed"/><SummaryCard label="Avg. Propensity Score" value="84" sub="Out of 100" color="#059669"/></div>
+    <div style={{overflowX:"auto"}} className="hide-scrollbar"><table style={{width:"100%",minWidth:m?600:"auto",borderCollapse:"separate",borderSpacing:0,fontSize:m?12:13}}><thead><tr>{["Account","Type","Propensity","Intent Signals","Industry"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{accountData.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.name}</span></td><td style={tdStyle}><Badge label={a.type} variant={a.type.toLowerCase()}/></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:8}}><ProgressBar value={a.score} color={a.score>85?"#2563eb":"#7c3aed"}/><span style={{fontSize:12,fontWeight:700,color:"#334155",minWidth:24}}>{a.score}</span></div></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.signals}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.industry}</span></td></tr>)}</tbody></table></div>
+    <div style={{fontSize:m?11:12,color:"#94a3b8",textAlign:"right"}}>Showing 10 of 916 accounts &bull; Sorted by propensity score</div>
   </div>);
 }
 
 function Step2Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Partners Recommended" value="6" sub="Across all segments" color="#1d4ed8"/><SummaryCard label="Accounts Covered" value="854" sub="100% of Select accounts" color="#059669"/><SummaryCard label="Avg. Partner Fit" value="89%" sub="Based on capability match" color="#7c3aed"/></div>
-    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Partner","Accounts Assigned","Fit Score","Specialty","Selling Guidance"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{partnerData.map((p,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{p.partner}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{p.accounts}</span></td><td style={tdStyle}><ScoreRing value={p.fit} color={p.fit>90?"#2563eb":"#7c3aed"}/></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{p.specialty}</span></td><td style={{...tdStyle,maxWidth:260}}><span style={{color:"#64748b",fontSize:12,lineHeight:1.4}}>{p.guidance}</span></td></tr>)}</tbody></table></div>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Partners Recommended" value="6" sub="Across all segments" color="#1d4ed8"/><SummaryCard label="Accounts Covered" value="854" sub="100% of Select accounts" color="#059669"/><SummaryCard label="Avg. Partner Fit" value="89%" sub="Based on capability match" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}} className="hide-scrollbar"><table style={{width:"100%",minWidth:m?600:"auto",borderCollapse:"separate",borderSpacing:0,fontSize:m?12:13}}><thead><tr>{["Partner","Accounts Assigned","Fit Score","Specialty","Selling Guidance"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{partnerData.map((p,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{p.partner}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{p.accounts}</span></td><td style={tdStyle}><ScoreRing value={p.fit} color={p.fit>90?"#2563eb":"#7c3aed"}/></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{p.specialty}</span></td><td style={{...tdStyle,maxWidth:260}}><span style={{color:"#64748b",fontSize:12,lineHeight:1.4}}>{p.guidance}</span></td></tr>)}</tbody></table></div>
   </div>);
 }
 
 function Step3Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-      <div style={cardStyle}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Total Addressable Audience</div><div style={{fontSize:32,fontWeight:800,color:"#0f172a",marginTop:4}}>87,000</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Across 5 segments &bull; 3 platforms</div></div><DonutChart segments={[{value:12400,color:"#2563eb"},{value:8700,color:"#7c3aed"},{value:2100,color:"#059669"},{value:18600,color:"#f59e0b"},{value:45200,color:"#e5e7eb"}]}/></div></div>
+  const mob = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:mob?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"1fr 1fr",gap:mob?8:14}}>
+      <div style={cardStyle}><div style={{display:"flex",flexDirection:mob?"column":"row",justifyContent:"space-between",alignItems:mob?"center":"flex-start",gap:mob?12:0}}><div style={{textAlign:mob?"center":"left"}}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Total Addressable Audience</div><div style={{fontSize:mob?26:32,fontWeight:800,color:"#0f172a",marginTop:4}}>87,000</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Across 5 segments &bull; 3 platforms</div></div><DonutChart segments={[{value:12400,color:"#2563eb"},{value:8700,color:"#7c3aed"},{value:2100,color:"#059669"},{value:18600,color:"#f59e0b"},{value:45200,color:"#e5e7eb"}]} size={mob?100:120}/></div></div>
       <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Synthetic Profile Test Results</div><div style={{marginTop:12,display:"flex",flexDirection:"column",gap:10}}>{[{label:"Message resonance",value:88,color:"#2563eb"},{label:"Channel-audience fit",value:91,color:"#059669"},{label:"Predicted engagement",value:76,color:"#7c3aed"}].map(m=><div key={m.label}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:"#475569"}}>{m.label}</span><span style={{fontWeight:700,color:"#0f172a"}}>{m.value}%</span></div><ProgressBar value={m.value} color={m.color} height={8}/></div>)}</div></div>
     </div>
-    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Audience Segment","Est. Size","Channels","Match Score"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{audienceSegments.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.segment}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{a.size}</span></td><td style={tdStyle}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{a.channels.map(c=><span key={c} style={{fontSize:11,padding:"2px 8px",borderRadius:4,backgroundColor:"#f1f5f9",color:"#475569",fontWeight:500}}>{c}</span>)}</div></td><td style={tdStyle}><ScoreRing value={a.match} color={a.match>90?"#059669":a.match>80?"#2563eb":"#94a3b8"}/></td></tr>)}</tbody></table></div>
+    <div style={{overflowX:"auto"}} className="hide-scrollbar"><table style={{width:"100%",minWidth:mob?520:"auto",borderCollapse:"separate",borderSpacing:0,fontSize:mob?12:13}}><thead><tr>{["Audience Segment","Est. Size","Channels","Match Score"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{audienceSegments.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.segment}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{a.size}</span></td><td style={tdStyle}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{a.channels.map(c=><span key={c} style={{fontSize:11,padding:"2px 8px",borderRadius:4,backgroundColor:"#f1f5f9",color:"#475569",fontWeight:500}}>{c}</span>)}</div></td><td style={tdStyle}><ScoreRing value={a.match} color={a.match>90?"#059669":a.match>80?"#2563eb":"#94a3b8"}/></td></tr>)}</tbody></table></div>
   </div>);
 }
 
 function Step4Screen() {
+  const m = useIsMobile();
   const gradients=["linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)","linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)","linear-gradient(135deg, #059669 0%, #34d399 100%)","linear-gradient(135deg, #0891b2 0%, #67e8f9 100%)","linear-gradient(135deg, #d97706 0%, #fbbf24 100%)"];
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Creative Variants" value="5" sub="Across 3 formats" color="#1d4ed8"/><SummaryCard label="Legal Cleared" value="4 of 5" sub="1 pending review" color="#059669"/><SummaryCard label="Avg. Brand Score" value="93" sub="Above 90 threshold" color="#7c3aed"/></div>
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>{creativeVariants.map((c,i)=><div key={i} style={{...cardStyle,display:"flex",gap:16,alignItems:"center"}}><div style={{width:100,height:68,borderRadius:8,flexShrink:0,background:gradients[i],display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:20,fontWeight:800}}>{c.format.includes("Video")? "\u25B6":c.format.includes("Carousel")? "\u25E7":"\u25A3"}</div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{fontWeight:700,color:"#0f172a",fontSize:13}}>Variant {c.id}</span><span style={{fontSize:11,color:"#94a3b8"}}>&bull;</span><span style={{fontSize:12,color:"#64748b"}}>{c.format}</span></div><div style={{fontSize:13,color:"#334155",lineHeight:1.4}}>"{c.headline}"</div></div><div style={{display:"flex",gap:16,alignItems:"center",flexShrink:0}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Predicted CTR</div><div style={{fontSize:18,fontWeight:800,color:c.predicted>3.5?"#059669":"#1d4ed8"}}>{c.predicted}%</div></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Brand</div><ScoreRing value={c.brand} size={36} color={c.brand>94?"#059669":"#f59e0b"}/></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Legal</div><Badge label={c.legal} variant={c.legal.toLowerCase()}/></div></div></div>)}</div>
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Creative Variants" value="5" sub="Across 3 formats" color="#1d4ed8"/><SummaryCard label="Legal Cleared" value="4 of 5" sub="1 pending review" color="#059669"/><SummaryCard label="Avg. Brand Score" value="93" sub="Above 90 threshold" color="#7c3aed"/></div>
+    <div style={{display:"flex",flexDirection:"column",gap:m?8:12}}>{creativeVariants.map((c,i)=><div key={i} style={{...cardStyle,display:"flex",flexDirection:m?"column":"row",gap:m?12:16,alignItems:m?"stretch":"center"}}><div style={{width:m?"100%":100,height:m?48:68,borderRadius:8,flexShrink:0,background:gradients[i],display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:m?16:20,fontWeight:800}}>{c.format.includes("Video")? "\u25B6":c.format.includes("Carousel")? "\u25E7":"\u25A3"}</div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{fontWeight:700,color:"#0f172a",fontSize:13}}>Variant {c.id}</span><span style={{fontSize:11,color:"#94a3b8"}}>&bull;</span><span style={{fontSize:12,color:"#64748b"}}>{c.format}</span></div><div style={{fontSize:m?12:13,color:"#334155",lineHeight:1.4}}>"{c.headline}"</div></div><div style={{display:"flex",gap:m?12:16,alignItems:"center",flexShrink:0,justifyContent:m?"space-between":"flex-end"}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Predicted CTR</div><div style={{fontSize:m?16:18,fontWeight:800,color:c.predicted>3.5?"#059669":"#1d4ed8"}}>{c.predicted}%</div></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Brand</div><ScoreRing value={c.brand} size={36} color={c.brand>94?"#059669":"#f59e0b"}/></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Legal</div><Badge label={c.legal} variant={c.legal.toLowerCase()}/></div></div></div>)}</div>
   </div>);
 }
 
 function Step5Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Language Markets" value="4" sub="North America focus" color="#1d4ed8"/><SummaryCard label="Assets Localized" value="44" sub="Across all markets" color="#059669"/><SummaryCard label="Ready for Review" value="44" sub="All ready" color="#7c3aed"/></div>
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>{localizedAssets.map((a,i)=><div key={i} style={{...cardStyle,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{flex:1}}><div style={{fontWeight:700,color:"#0f172a",fontSize:14}}>{a.region}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{a.language} &bull; {a.assets} assets</div><div style={{fontSize:12,color:"#94a3b8",marginTop:6,lineHeight:1.4,fontStyle:"italic"}}>{a.notes}</div></div><div style={{display:"flex",gap:12,alignItems:"center",flexShrink:0}}><Badge label={a.status==="Ready for review"?"Ready":"In Progress"} variant={a.status==="Ready for review"?"clear":"review"}/><div style={{display:"flex",gap:4}}><div style={{width:48,height:32,borderRadius:4,backgroundColor:"#e0e7ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#4338ca",fontWeight:600}}>EN</div><div style={{fontSize:14,color:"#cbd5e1",alignSelf:"center"}}>&rarr;</div><div style={{width:48,height:32,borderRadius:4,backgroundColor:"#fef3c7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#92400e",fontWeight:600}}>{a.language.slice(0,2).toUpperCase()}</div></div></div></div>)}</div>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Language Markets" value="4" sub="North America focus" color="#1d4ed8"/><SummaryCard label="Assets Localized" value="44" sub="Across all markets" color="#059669"/><SummaryCard label="Ready for Review" value="44" sub="All ready" color="#7c3aed"/></div>
+    <div style={{display:"flex",flexDirection:"column",gap:m?8:12}}>{localizedAssets.map((a,i)=><div key={i} style={{...cardStyle,display:"flex",flexDirection:m?"column":"row",justifyContent:"space-between",alignItems:m?"flex-start":"center",gap:m?12:0}}><div style={{flex:1}}><div style={{fontWeight:700,color:"#0f172a",fontSize:m?13:14}}>{a.region}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{a.language} &bull; {a.assets} assets</div><div style={{fontSize:m?11:12,color:"#94a3b8",marginTop:6,lineHeight:1.4,fontStyle:"italic"}}>{a.notes}</div></div><div style={{display:"flex",gap:12,alignItems:"center",flexShrink:0}}><Badge label={a.status==="Ready for review"?"Ready":"In Progress"} variant={a.status==="Ready for review"?"clear":"review"}/><div style={{display:"flex",gap:4}}><div style={{width:m?40:48,height:m?28:32,borderRadius:4,backgroundColor:"#e0e7ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#4338ca",fontWeight:600}}>EN</div><div style={{fontSize:14,color:"#cbd5e1",alignSelf:"center"}}>&rarr;</div><div style={{width:m?40:48,height:m?28:32,borderRadius:4,backgroundColor:"#fef3c7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#92400e",fontWeight:600}}>{a.language.slice(0,2).toUpperCase()}</div></div></div></div>)}</div>
   </div>);
 }
 
 function Step6Screen() {
+  const m = useIsMobile();
   const alloc=[{label:"LinkedIn",pct:37.6,color:"#2563eb"},{label:"Google DV360",pct:24.9,color:"#7c3aed"},{label:"Meta",pct:18.0,color:"#059669"},{label:"The Trade Desk",pct:14.8,color:"#f59e0b"},{label:"Reddit",pct:4.8,color:"#ef4444"}];
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Total Budget" value="$378K" sub="Across 5 platforms" color="#1d4ed8"/><SummaryCard label="Audiences Deployed" value="16" sub="Across all platforms" color="#059669"/><SummaryCard label="Launch Window" value="Mon 6AM" sub="Staggered by platform" color="#7c3aed"/></div>
-    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Platform","Budget","Bid Strategy","Bid","Audiences","Launch Time"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{bidStrategies.map((b,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{b.platform}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#059669"}}>{b.budget}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{b.strategy}</span></td><td style={tdStyle}><span style={{fontWeight:600,color:"#1d4ed8",fontSize:12}}>{b.bid}</span></td><td style={tdStyle}><span style={{fontWeight:700}}>{b.audiences}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{b.start}</span></td></tr>)}</tbody></table></div>
-    <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Budget Allocation</div><div style={{display:"flex",borderRadius:8,overflow:"hidden",height:28}}>{alloc.map(s=><div key={s.label} style={{width:s.pct+"%",backgroundColor:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap",overflow:"hidden"}} title={s.label+": "+s.pct+"%"}>{s.pct>10?s.label+" "+s.pct+"%":""}</div>)}</div><div style={{display:"flex",gap:16,marginTop:10,flexWrap:"wrap"}}>{alloc.map(s=><div key={s.label} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#64748b"}}><div style={{width:8,height:8,borderRadius:2,backgroundColor:s.color}}/>{s.label}</div>)}</div></div>
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Total Budget" value="$378K" sub="Across 5 platforms" color="#1d4ed8"/><SummaryCard label="Audiences Deployed" value="16" sub="Across all platforms" color="#059669"/><SummaryCard label="Launch Window" value="Mon 6AM" sub="Staggered by platform" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}} className="hide-scrollbar"><table style={{width:"100%",minWidth:m?600:"auto",borderCollapse:"separate",borderSpacing:0,fontSize:m?12:13}}><thead><tr>{["Platform","Budget","Bid Strategy","Bid","Audiences","Launch Time"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{bidStrategies.map((b,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{b.platform}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#059669"}}>{b.budget}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{b.strategy}</span></td><td style={tdStyle}><span style={{fontWeight:600,color:"#1d4ed8",fontSize:12}}>{b.bid}</span></td><td style={tdStyle}><span style={{fontWeight:700}}>{b.audiences}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{b.start}</span></td></tr>)}</tbody></table></div>
+    <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Budget Allocation</div><div style={{display:"flex",borderRadius:8,overflow:"hidden",height:m?24:28}}>{alloc.map(s=><div key={s.label} style={{width:s.pct+"%",backgroundColor:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:m?0:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap",overflow:"hidden"}} title={s.label+": "+s.pct+"%"}>{!m&&s.pct>10?s.label+" "+s.pct+"%":""}</div>)}</div><div style={{display:"flex",gap:m?8:16,marginTop:10,flexWrap:"wrap"}}>{alloc.map(s=><div key={s.label} style={{display:"flex",alignItems:"center",gap:4,fontSize:m?10:11,color:"#64748b"}}><div style={{width:8,height:8,borderRadius:2,backgroundColor:s.color}}/>{s.label}</div>)}</div></div>
   </div>);
 }
 
 function Step7Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(5, 1fr)",gap:10}}>{performanceData.map(p=><div key={p.metric} style={{...cardStyle,textAlign:"center",padding:14}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>{p.metric}</div><div style={{fontSize:22,fontWeight:800,color:"#0f172a",marginTop:4}}>{p.value}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:4}}><span style={{fontSize:12,fontWeight:700,color:p.status==="above"?"#059669":"#2563eb"}}>{p.change}</span><Badge label={p.status==="above"?"Above target":"On track"} variant={p.status}/></div></div>)}</div>
-    <div><div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:10}}>Anomalies & Suggested Actions</div><div style={{display:"flex",flexDirection:"column",gap:10}}>{anomalies.map((a,i)=><div key={i} style={{...cardStyle,borderLeft:"4px solid "+(a.severity==="High"?"#dc2626":a.severity==="Medium"?"#f59e0b":"#2563eb"),display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><Badge label={a.severity} variant={a.severity.toLowerCase()}/><span style={{fontWeight:700,color:"#0f172a",fontSize:13}}>{a.type}</span></div><div style={{fontSize:13,color:"#334155",lineHeight:1.4,marginBottom:6}}>{a.detail}</div><div style={{fontSize:12,color:"#2563eb",fontWeight:600}}>{"\u26A1"} Recommended: {a.action}</div></div></div>)}</div></div>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr 1fr":"repeat(5, 1fr)",gap:m?8:10}}>{performanceData.map(p=><div key={p.metric} style={{...cardStyle,textAlign:"center",padding:m?12:14}}><div style={{fontSize:m?9:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>{p.metric}</div><div style={{fontSize:m?18:22,fontWeight:800,color:"#0f172a",marginTop:4}}>{p.value}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:4,flexWrap:"wrap"}}><span style={{fontSize:m?11:12,fontWeight:700,color:p.status==="above"?"#059669":"#2563eb"}}>{p.change}</span><Badge label={p.status==="above"?"Above":"On track"} variant={p.status}/></div></div>)}</div>
+    <div><div style={{fontSize:m?13:14,fontWeight:700,color:"#0f172a",marginBottom:10}}>Anomalies & Suggested Actions</div><div style={{display:"flex",flexDirection:"column",gap:m?8:10}}>{anomalies.map((a,i)=><div key={i} style={{...cardStyle,borderLeft:"4px solid "+(a.severity==="High"?"#dc2626":a.severity==="Medium"?"#f59e0b":"#2563eb"),padding:m?14:18}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><Badge label={a.severity} variant={a.severity.toLowerCase()}/><span style={{fontWeight:700,color:"#0f172a",fontSize:m?12:13}}>{a.type}</span></div><div style={{fontSize:m?12:13,color:"#334155",lineHeight:1.4,marginBottom:6}}>{a.detail}</div><div style={{fontSize:m?11:12,color:"#2563eb",fontWeight:600}}>{"\u26A1"} Recommended: {a.action}</div></div>)}</div></div>
   </div>);
 }
 
 function Step8Screen() {
-  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Qualified Leads" value="47" sub="Ready for sales outreach" color="#1d4ed8"/><SummaryCard label="Pipeline Value" value="$6.2M" sub="Estimated opportunity" color="#059669"/><SummaryCard label="Partner-Sourced" value="28%" sub="Via activated partners" color="#7c3aed"/></div>
-    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Account","Contact","Lead Score","Partner","Recommended Action","Status"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{leadData.map((l,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{l.account}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{l.contact}</span></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:6}}><ScoreRing value={l.score} size={36} color={l.score>90?"#059669":"#2563eb"}/></div></td><td style={tdStyle}><span style={{color:l.partner==="\u2014"?"#94a3b8":"#1d4ed8",fontWeight:l.partner==="\u2014"?400:600,fontSize:12}}>{l.partner}</span></td><td style={{...tdStyle,maxWidth:240}}><span style={{color:"#334155",fontSize:12,lineHeight:1.4}}>{l.action}</span></td><td style={tdStyle}><Badge label={l.status} variant={l.status.toLowerCase()}/></td></tr>)}</tbody></table></div>
-    <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Pipeline Gap Closure Progress</div><div style={{display:"flex",alignItems:"center",gap:12}}><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:6}}><span style={{color:"#475569"}}>Gap closed</span><span style={{fontWeight:700,color:"#059669"}}>73% ($6.2M of $8.5M target)</span></div><div style={{width:"100%",height:16,backgroundColor:"#e5e7eb",borderRadius:10,overflow:"hidden",position:"relative"}}><div style={{width:"73%",height:"100%",background:"linear-gradient(90deg, #2563eb, #059669)",borderRadius:10,transition:"width 1s ease"}}/><div style={{position:"absolute",right:"27%",top:-2,width:2,height:20,backgroundColor:"#dc2626"}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginTop:4,color:"#94a3b8"}}><span>$0</span><span style={{color:"#dc2626",fontWeight:600}}>Target: $8.5M</span></div></div></div></div>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?16:20}}>
+    <div style={{display:"grid",gridTemplateColumns:m?"1fr":"1fr 1fr 1fr",gap:m?8:14}}><SummaryCard label="Qualified Leads" value="47" sub="Ready for sales outreach" color="#1d4ed8"/><SummaryCard label="Pipeline Value" value="$6.2M" sub="Estimated opportunity" color="#059669"/><SummaryCard label="Partner-Sourced" value="28%" sub="Via activated partners" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}} className="hide-scrollbar"><table style={{width:"100%",minWidth:m?640:"auto",borderCollapse:"separate",borderSpacing:0,fontSize:m?12:13}}><thead><tr>{["Account","Contact","Lead Score","Partner","Recommended Action","Status"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{leadData.map((l,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{l.account}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{l.contact}</span></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:6}}><ScoreRing value={l.score} size={36} color={l.score>90?"#059669":"#2563eb"}/></div></td><td style={tdStyle}><span style={{color:l.partner==="\u2014"?"#94a3b8":"#1d4ed8",fontWeight:l.partner==="\u2014"?400:600,fontSize:12}}>{l.partner}</span></td><td style={{...tdStyle,maxWidth:240}}><span style={{color:"#334155",fontSize:12,lineHeight:1.4}}>{l.action}</span></td><td style={tdStyle}><Badge label={l.status} variant={l.status.toLowerCase()}/></td></tr>)}</tbody></table></div>
+    <div style={cardStyle}><div style={{fontSize:m?11:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Pipeline Gap Closure Progress</div><div style={{display:"flex",alignItems:"center",gap:12}}><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",fontSize:m?11:12,marginBottom:6,flexWrap:"wrap",gap:4}}><span style={{color:"#475569"}}>Gap closed</span><span style={{fontWeight:700,color:"#059669"}}>73% ($6.2M of $8.5M)</span></div><div style={{width:"100%",height:m?12:16,backgroundColor:"#e5e7eb",borderRadius:10,overflow:"hidden",position:"relative"}}><div style={{width:"73%",height:"100%",background:"linear-gradient(90deg, #2563eb, #059669)",borderRadius:10,transition:"width 1s ease"}}/><div style={{position:"absolute",right:"27%",top:-2,width:2,height:m?16:20,backgroundColor:"#dc2626"}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginTop:4,color:"#94a3b8"}}><span>$0</span><span style={{color:"#dc2626",fontWeight:600}}>Target: $8.5M</span></div></div></div></div>
   </div>);
 }
 
@@ -236,6 +257,7 @@ const LOADING_CONFIGS = [
 ];
 
 function ProcessingSteps({ steps, color }) {
+  const m = useIsMobile();
   const [visibleCount, setVisibleCount] = useState(0);
   const [activeTyping, setActiveTyping] = useState(0);
   useEffect(() => {
@@ -247,13 +269,13 @@ function ProcessingSteps({ steps, color }) {
     return () => timers.forEach(clearTimeout);
   }, [steps]);
   if (!steps || steps.length === 0) return null;
-  return (<div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-start",width:"100%",minHeight:steps.length*34}}>
+  return (<div style={{display:"flex",flexDirection:"column",gap:m?8:10,alignItems:"flex-start",width:"100%",minHeight:steps.length*(m?28:34)}}>
     {steps.map((s, i) => {
       const done = i < visibleCount - 1;
       const active = i === visibleCount - 1;
       const hidden = i >= visibleCount;
-      return (<div key={i} style={{display:"flex",alignItems:"center",gap:10,fontSize:15,height:26,opacity:hidden?0:1,transform:hidden?"translateY(6px)":"translateY(0)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
-        <div style={{width:22,height:22,borderRadius:11,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,backgroundColor:done?color:active?color+"18":"#e5e7eb",color:done?"#fff":active?color:"#94a3b8",border:active?"2px solid "+color:"none",transition:"all 0.3s ease"}}>{done?"\u2713":active?<div style={{width:8,height:8,borderRadius:4,backgroundColor:color,animation:"pulse-glow 1s infinite"}}/>:<span style={{fontSize:9}}>{i+1}</span>}</div>
+      return (<div key={i} style={{display:"flex",alignItems:"center",gap:m?8:10,fontSize:m?13:15,height:m?22:26,opacity:hidden?0:1,transform:hidden?"translateY(6px)":"translateY(0)",transition:"opacity 0.3s ease, transform 0.3s ease"}}>
+        <div style={{width:m?18:22,height:m?18:22,borderRadius:m?9:11,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:m?9:11,backgroundColor:done?color:active?color+"18":"#e5e7eb",color:done?"#fff":active?color:"#94a3b8",border:active?"2px solid "+color:"none",transition:"all 0.3s ease"}}>{done?"\u2713":active?<div style={{width:m?6:8,height:m?6:8,borderRadius:m?3:4,backgroundColor:color,animation:"pulse-glow 1s infinite"}}/>:<span style={{fontSize:m?8:9}}>{i+1}</span>}</div>
         <span style={{color:done?"#64748b":active?"#0f172a":"#94a3b8",fontWeight:active?600:400,transition:"all 0.3s ease"}}>{s}{active && <span style={{animation:"typing-dots 1.2s infinite"}}>...</span>}</span>
       </div>);
     })}
@@ -261,11 +283,14 @@ function ProcessingSteps({ steps, color }) {
 }
 
 function LoaderShell({ children, label, sub, color, progress, steps }) {
-  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"48px 20px",gap:20}}>
-    <div style={{position:"relative",width:132,height:132,transform:"scale(1.1)",transformOrigin:"center"}}>{children}</div>
-    <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:13,color:"#94a3b8",maxWidth:360}}>{sub}</div></div>
-    <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
-    <div style={{width:420,display:"flex",flexDirection:"column",gap:16}}>
+  const m = useIsMobile();
+  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:m?"32px 16px":"48px 20px",gap:0}}>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:m?240:280,gap:m?24:20}}>
+      <div style={{position:"relative",width:m?100:132,height:m?100:132,transform:m?"none":"scale(1.1)",transformOrigin:"center",flexShrink:0}}>{children}</div>
+      <div style={{textAlign:"center"}}><div style={{fontSize:m?14:16,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:m?12:13,color:"#94a3b8",maxWidth:m?300:360}}>{sub}</div></div>
+      <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
+    </div>
+    <div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:m?12:16,marginTop:m?16:20}}>
       <div style={{width:"100%",height:5,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
       <ProcessingSteps steps={steps} color={color}/>
     </div>
@@ -314,16 +339,21 @@ const REVIEWER_CONFIGS = [
   { group:"Demand Strategy", iconType:"demand", color:"#2563eb" },
 ];
 
+const STEP_SHORT = ["Accounts","Partners","Audiences","Creatives","Localize","Launch","Optimize","Leads"];
+
 function App() {
+  const m = useIsMobile();
   const [activeStep, setActiveStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     setAnimKey(k => k + 1);
     setLoading(true);
     setProgress(0);
+    setShowDetails(false);
     const steps = [{pct:5,delay:800},{pct:12,delay:2000},{pct:22,delay:4000},{pct:35,delay:6000},{pct:48,delay:8000},{pct:60,delay:10000},{pct:72,delay:12000},{pct:82,delay:14000},{pct:90,delay:16000},{pct:96,delay:18000},{pct:100,delay:19500}];
     const timers = steps.map(s => setTimeout(() => setProgress(s.pct), s.delay));
     const doneTimer = setTimeout(() => setLoading(false), 20000);
@@ -333,43 +363,65 @@ function App() {
   const step = STEPS[activeStep];
   const StepScreen = STEP_SCREENS[activeStep];
   const StepLoader = STEP_LOADERS[activeStep];
+  const reviewer = REVIEWER_CONFIGS[activeStep];
 
   return (
     <div style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",minHeight:"100vh",background:"linear-gradient(180deg,#f0f4f8 0%,#e2e8f0 100%)",color:"#0f172a"}}>
-      <div style={{background:"linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",padding:"24px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>IBM Marketing &bull; Agentic Workflow</div><div style={{fontSize:22,fontWeight:800,color:"#fff",marginTop:4,letterSpacing:"-0.02em"}}>Pipeline Gap Response &mdash; AI Productivity Software, North America</div></div>
-        <div style={{padding:"8px 16px",borderRadius:8,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.25)"}}><div style={{fontSize:10,color:"#93c5fd",fontWeight:600,textTransform:"uppercase"}}>Trigger</div><div style={{fontSize:13,color:"#bfdbfe",fontWeight:600,marginTop:2}}>30% pipeline gap detected</div></div>
+      {/* Header */}
+      <div style={{background:"linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",padding:m?"16px":"24px 32px",display:"flex",flexDirection:m?"column":"row",alignItems:m?"flex-start":"center",justifyContent:"space-between",gap:m?12:0}}>
+        <div><div style={{fontSize:m?10:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>IBM Marketing &bull; Agentic Workflow</div><div style={{fontSize:m?16:22,fontWeight:800,color:"#fff",marginTop:4,letterSpacing:"-0.02em"}}>{m?"Pipeline Gap Response":"Pipeline Gap Response \u2014 AI Productivity Software, North America"}</div></div>
+        <div style={{padding:m?"6px 12px":"8px 16px",borderRadius:8,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.25)",alignSelf:m?"flex-start":"auto"}}><div style={{fontSize:10,color:"#93c5fd",fontWeight:600,textTransform:"uppercase"}}>Trigger</div><div style={{fontSize:m?12:13,color:"#bfdbfe",fontWeight:600,marginTop:2}}>30% pipeline gap detected</div></div>
       </div>
 
-      <div style={{padding:"16px 32px 0",overflowX:"auto"}}>
-        <div style={{display:"flex",gap:4,minWidth:"fit-content"}}>
+      {/* Step tabs */}
+      <div style={{padding:m?"12px 12px 0":"16px 32px 0",overflowX:"auto"}} className="hide-scrollbar">
+        <div style={{display:"flex",gap:m?2:4,minWidth:"fit-content"}}>
           {STEPS.map((s,i) => {
             const isActive = i === activeStep, isPast = i < activeStep;
-            return (<button key={i} onClick={() => setActiveStep(i)} style={{flex:"1 1 0",minWidth:120,padding:"10px 12px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",background:isActive?"#fff":isPast?"rgba(37,99,235,0.06)":"transparent",transition:"all 0.2s ease",boxShadow:isActive?"0 -2px 8px rgba(0,0,0,0.06)":"none",position:"relative"}}>
-              <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}><span style={{fontSize:12,fontWeight:isActive?800:600,color:isActive?"#1d4ed8":isPast?"#2563eb":"#94a3b8",whiteSpace:"nowrap"}}>{s.id}. {s.title}</span></div>
-              <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.time}</div>
-              {isActive && <div style={{position:"absolute",bottom:0,left:12,right:12,height:3,backgroundColor:"#2563eb",borderRadius:"3px 3px 0 0"}}/>}
+            return (<button key={i} onClick={() => setActiveStep(i)} style={{flex:m?"0 0 auto":"1 1 0",minWidth:m?64:120,padding:m?"8px 10px":"10px 12px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",background:isActive?"#fff":isPast?"rgba(37,99,235,0.06)":"transparent",transition:"all 0.2s ease",boxShadow:isActive?"0 -2px 8px rgba(0,0,0,0.06)":"none",position:"relative"}}>
+              <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"center"}}><span style={{fontSize:m?11:12,fontWeight:isActive?800:600,color:isActive?"#1d4ed8":isPast?"#2563eb":"#94a3b8",whiteSpace:"nowrap"}}>{m?s.id+". "+STEP_SHORT[i]:s.id+". "+s.title}</span></div>
+              {!m && <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.time}</div>}
+              {isActive && <div style={{position:"absolute",bottom:0,left:m?6:12,right:m?6:12,height:3,backgroundColor:"#2563eb",borderRadius:"3px 3px 0 0"}}/>}
             </button>);
           })}
         </div>
       </div>
 
-      <div style={{padding:"0 32px 32px"}}>
+      {/* Main content card */}
+      <div style={{padding:m?"0 12px 16px":"0 32px 32px"}}>
         <div style={{background:"#fff",borderRadius:"0 0 16px 16px",boxShadow:"0 4px 24px rgba(0,0,0,0.06)",overflow:"hidden"}}>
-          <div style={{padding:"20px 28px",borderBottom:"1px solid #f1f5f9",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div><div style={{fontSize:18,fontWeight:800,color:"#0f172a",letterSpacing:"-0.01em"}}><span style={{color:"#2563eb"}}>Step {step.id}:</span> {step.title}</div><div style={{fontSize:13,color:"#64748b",marginTop:4,maxWidth:700,lineHeight:1.5}}><strong style={{color:"#475569"}}>AI presents:</strong> {step.aiSummary}</div></div>
-            <div style={{flexShrink:0,marginLeft:24,width:240,padding:"12px 16px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc"}}><div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}><div style={{width:36,height:36,borderRadius:8,background:REVIEWER_CONFIGS[activeStep].color+"14",border:"1px solid "+REVIEWER_CONFIGS[activeStep].color+"28",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><ReviewerIcon type={REVIEWER_CONFIGS[activeStep].iconType} size={18} color={REVIEWER_CONFIGS[activeStep].color}/></div><div><div style={{fontSize:12,fontWeight:700,color:"#0f172a",lineHeight:1.2}}>{REVIEWER_CONFIGS[activeStep].group}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.03em",marginTop:1}}>Review</div></div></div><div style={{fontSize:11,color:"#475569",lineHeight:1.4,marginBottom:8}}>{step.humanAction}</div><div style={{display:"flex",alignItems:"center",gap:6,fontSize:11}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span style={{color:"#94a3b8",fontWeight:600}}>Est. {step.humanTime}</span></div></div>
+          {/* Step header + Review card */}
+          <div style={{padding:m?"16px":"20px 28px",borderBottom:"1px solid #f1f5f9",display:"flex",flexDirection:m?"column":"row",justifyContent:"space-between",alignItems:"flex-start",gap:m?12:0}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:m?16:18,fontWeight:800,color:"#0f172a",letterSpacing:"-0.01em"}}><span style={{color:"#2563eb"}}>Step {step.id}:</span> {step.title}</div>
+              <div style={{fontSize:m?12:13,color:"#64748b",marginTop:m?8:4,lineHeight:1.5}}>
+                <strong style={{color:"#475569"}}>AI presents:</strong>{" "}
+                {m && step.aiSummary.length > 80 ? (
+                  <span>{showDetails ? step.aiSummary : step.aiSummary.slice(0,80)+"... "}<button onClick={()=>setShowDetails(!showDetails)} style={{border:"none",background:"none",color:"#2563eb",fontSize:12,fontWeight:600,cursor:"pointer",padding:0}}>{showDetails?"Show less":"Show more"}</button></span>
+                ) : step.aiSummary}
+              </div>
+            </div>
+            <div style={{flexShrink:0,marginLeft:m?0:24,width:m?"100%":240,padding:"12px 16px",borderRadius:10,border:"1px solid #e2e8f0",background:"#f8fafc"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                <div style={{width:36,height:36,borderRadius:8,background:reviewer.color+"14",border:"1px solid "+reviewer.color+"28",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><ReviewerIcon type={reviewer.iconType} size={18} color={reviewer.color}/></div>
+                <div style={{flex:1}}><div style={{fontSize:12,fontWeight:700,color:"#0f172a",lineHeight:1.2}}>{reviewer.group}</div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.03em",marginTop:1}}>Review</div></div>
+                <div style={{display:"flex",alignItems:"center",gap:4,fontSize:11,flexShrink:0}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span style={{color:"#94a3b8",fontWeight:600}}>Est. {step.humanTime}</span></div>
+              </div>
+              <div style={{fontSize:11,color:"#475569",lineHeight:1.4}}>{step.humanAction}</div>
+            </div>
           </div>
 
-          <div key={animKey} style={{padding:28}}>
+          {/* Content area */}
+          <div key={animKey} style={{padding:m?16:28}}>
             {loading ? <StepLoader progress={progress}/> : <div style={{animation:"fade-in-up 0.4s ease-out"}}><StepScreen/></div>}
           </div>
 
-          <div style={{padding:"16px 28px",borderTop:"1px solid #f1f5f9",background:"#fafbfc",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontSize:12,color:"#94a3b8"}}>AI confidence: <strong style={{color:"#059669"}}>High</strong> &bull; {step.time} elapsed</div>
-            <div style={{display:"flex",gap:10}}>
-              <button style={{padding:"8px 20px",border:"1px solid #e2e8f0",borderRadius:8,background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Request Changes</button>
-              <button onClick={() => activeStep < 7 && setActiveStep(activeStep + 1)} style={{padding:"8px 24px",border:"none",borderRadius:8,background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(37,99,235,0.3)"}}>{activeStep < 7 ? "Approve & Continue \u2192" : "\u2713 Workflow Complete"}</button>
+          {/* Footer */}
+          <div style={{padding:m?"12px 16px":"16px 28px",borderTop:"1px solid #f1f5f9",background:"#fafbfc",display:"flex",flexDirection:m?"column":"row",justifyContent:"space-between",alignItems:"center",gap:m?10:0}}>
+            <div style={{fontSize:m?11:12,color:"#94a3b8",textAlign:m?"center":"left"}}>AI confidence: <strong style={{color:"#059669"}}>High</strong> &bull; {step.time} elapsed</div>
+            <div style={{display:"flex",gap:m?8:10,width:m?"100%":"auto"}}>
+              <button style={{padding:m?"10px 16px":"8px 20px",border:"1px solid #e2e8f0",borderRadius:8,background:"#fff",color:"#64748b",fontSize:m?12:13,fontWeight:600,cursor:"pointer",flex:m?1:"none"}}>Request Changes</button>
+              <button onClick={() => activeStep < 7 && setActiveStep(activeStep + 1)} style={{padding:m?"10px 16px":"8px 24px",border:"none",borderRadius:8,background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:m?12:13,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(37,99,235,0.3)",flex:m?1:"none"}}>{activeStep < 7 ? "Approve & Continue \u2192" : "\u2713 Workflow Complete"}</button>
             </div>
           </div>
         </div>
