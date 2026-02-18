@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCC Demo — Pipeline Gap Response</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; }
+    #root { max-width: 100%; }
+    @keyframes pulse-glow { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
+    @keyframes scan-line { 0%{top:0} 100%{top:calc(100% - 2px)} }
+    @keyframes number-scroll { 0%{transform:translateY(0)} 100%{transform:translateY(-50%)} }
+    @keyframes fade-in-up { 0%{opacity:0;transform:translateY(12px)} 100%{opacity:1;transform:translateY(0)} }
+    @keyframes orbit { 0%{transform:rotate(0deg) translateX(28px) rotate(0deg)} 100%{transform:rotate(360deg) translateX(28px) rotate(-360deg)} }
+    @keyframes bar-grow { 0%{transform:scaleY(.2)} 50%{transform:scaleY(1)} 100%{transform:scaleY(.2)} }
+    @keyframes dot-cluster { 0%,100%{transform:translate(0,0)} 25%{transform:translate(4px,-6px)} 50%{transform:translate(-3px,4px)} 75%{transform:translate(5px,2px)} }
+    @keyframes morph-text { 0%,20%{opacity:1} 30%,40%{opacity:.3} 50%,100%{opacity:1} }
+    @keyframes spin-ring { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+    @keyframes typing-dots { 0%,20%{opacity:.2} 40%{opacity:1} 60%,100%{opacity:.2} }
+    @keyframes progress-sweep { 0%{width:0%} 60%{width:85%} 100%{width:100%} }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+const { useState, useEffect } = React;
+
+const STEPS = [
+  { id:1, title:"Identify Account Targets", time:"0\u20132h", humanTime:"15m", humanAction:"Approves target account list", aiSummary:"62 Named accounts and 854 Select accounts with high propensity for AI productivity software" },
+  { id:2, title:"Activate Partners", time:"2\u20134h", humanTime:"20m", humanAction:"Approves partner strategy", aiSummary:"Optimal partners for each of the 854 Select accounts + tailored selling guidance" },
+  { id:3, title:"Build Audiences", time:"4\u20136h", humanTime:"25m", humanAction:"Approves targeting strategy", aiSummary:"Defined audience for social media activation including key buying group members from target accounts + lookalike audiences" },
+  { id:4, title:"Generate Creatives", time:"6\u201324h", humanTime:"80m", humanAction:"Reviews QA\u2019d creatives, legal flags, and provides final approval", aiSummary:"Candidate AI-generated creatives pre-tested against synthetic audiences and compliant with brand/creative and legal guidelines" },
+  { id:5, title:"Localize Assets", time:"24\u201332h", humanTime:"45m", humanAction:"Reviews localized drafts", aiSummary:"Localized versions of creatives for North America\u2019s top non-English language communities \u2014 Spanish (US), French (CA), Punjabi, Simplified Chinese, and Haitian Creole" },
+  { id:6, title:"Launch Campaign", time:"32\u201336h", humanTime:"45m", humanAction:"Approves deployment, bids, and campaign launch", aiSummary:"Campaign launch plan with bid strategies" },
+  { id:7, title:"Optimize Performance", time:"36h+", humanTime:"70m/wk", humanAction:"Reviews anomalies, insights 2x/week, strategy weekly", aiSummary:"Campaign outliers / anomalies with suggested media or creative modifications" },
+  { id:8, title:"Deliver Leads", time:"Ongoing", humanTime:"Ongoing", humanAction:"Follows up on qualified sales leads", aiSummary:"Leads routed to appropriate XYZ and partner sellers with recommended next steps with content" },
+];
+
+const accountData = [
+  { name:"Pfizer Inc.", type:"Named", score:94, signals:"Active RFP, Exec change", industry:"Pharma" },
+  { name:"Johnson & Johnson", type:"Named", score:91, signals:"Budget cycle, Tech eval", industry:"Pharma" },
+  { name:"Roche Holding AG", type:"Named", score:89, signals:"Competitor displacement", industry:"Pharma" },
+  { name:"Novartis AG", type:"Named", score:87, signals:"Digital transformation", industry:"Pharma" },
+  { name:"Merck & Co.", type:"Named", score:86, signals:"Cloud migration", industry:"Pharma" },
+  { name:"AbbVie Inc.", type:"Named", score:84, signals:"AI pilot expansion", industry:"Biotech" },
+  { name:"Amgen Inc.", type:"Select", score:82, signals:"Hiring AI roles", industry:"Biotech" },
+  { name:"Gilead Sciences", type:"Select", score:79, signals:"Vendor consolidation", industry:"Biotech" },
+  { name:"Bristol-Myers Squibb", type:"Select", score:78, signals:"IT modernization", industry:"Pharma" },
+  { name:"Eli Lilly", type:"Named", score:76, signals:"Process automation", industry:"Pharma" },
+];
+
+const partnerData = [
+  { partner:"Kyndryl", accounts:187, fit:96, specialty:"Infrastructure & Cloud", guidance:"Lead with hybrid cloud migration path \u2192 AI overlay" },
+  { partner:"Deloitte", accounts:142, fit:93, specialty:"Enterprise Transformation", guidance:"Co-sell consulting + watsonx bundle for regulated industries" },
+  { partner:"HCLTech", accounts:128, fit:91, specialty:"Application Modernization", guidance:"Position managed services with AI productivity add-on" },
+  { partner:"Wipro", accounts:114, fit:88, specialty:"Digital Operations", guidance:"Target ops efficiency gains; reference Pharma case studies" },
+  { partner:"Infosys", accounts:96, fit:85, specialty:"Data & Analytics", guidance:"Lead with data platform modernization \u2192 AI readiness" },
+  { partner:"TCS", accounts:89, fit:83, specialty:"Industry Solutions", guidance:"Emphasize life sciences vertical expertise + compliance" },
+];
+
+const audienceSegments = [
+  { segment:"IT Decision Makers", size:"12,400", channels:["LinkedIn","Programmatic"], match:94 },
+  { segment:"Line of Business Leaders", size:"8,700", channels:["LinkedIn","Meta"], match:89 },
+  { segment:"C-Suite Executives", size:"2,100", channels:["LinkedIn","The Trade Desk"], match:92 },
+  { segment:"Technical Influencers", size:"18,600", channels:["Programmatic","Reddit"], match:86 },
+  { segment:"Lookalike \u2014 High Propensity", size:"45,200", channels:["Meta","Google","LinkedIn"], match:78 },
+];
+
+const creativeVariants = [
+  { id:"A", headline:"Transform Productivity with AI That Understands Your Business", format:"Video 30s", predicted:3.2, legal:"Clear", brand:96 },
+  { id:"B", headline:"From Data Overload to AI-Driven Decisions in Weeks", format:"Static Banner", predicted:2.8, legal:"Clear", brand:94 },
+  { id:"C", headline:"Your Competitors Are Already Using AI \u2014 Are You?", format:"Carousel", predicted:4.1, legal:"Review", brand:88 },
+  { id:"D", headline:"XYZ Platform: Enterprise AI Built for Regulated Industries", format:"Video 15s", predicted:3.6, legal:"Clear", brand:97 },
+  { id:"E", headline:"Cut Report Generation Time by 80% with AI Assistants", format:"Static Banner", predicted:2.4, legal:"Clear", brand:92 },
+];
+
+const localizedAssets = [
+  { region:"US Hispanic & Latino Markets", language:"Spanish (US)", assets:14, status:"Ready for review", notes:"Transcreated for US cultural context; avoided direct translation \u2014 adapted idioms and CTAs for bicultural audiences" },
+  { region:"Canada (Quebec & Francophone)", language:"French (CA)", assets:12, status:"Ready for review", notes:"Distinct from European French \u2014 updated colloquialisms, units, and legal disclaimers per Canadian Ad Standards" },
+  { region:"Canada (Punjabi-speaking communities)", language:"Punjabi", assets:8, status:"Ready for review", notes:"Targeted at high-growth South Asian tech decision-maker segment in Greater Toronto and Vancouver markets" },
+  { region:"US & Canada (Mandarin-speaking communities)", language:"Simplified Chinese", assets:10, status:"Ready for review", notes:"Adapted for professional diaspora audiences; imagery and case studies reflect North American business context" },
+];
+
+const bidStrategies = [
+  { platform:"LinkedIn", budget:"$142K", strategy:"Target CPA", bid:"$85 CPA", audiences:4, start:"Mon 6:00 AM ET" },
+  { platform:"Meta", budget:"$68K", strategy:"Conversions", bid:"Auto-optimize", audiences:3, start:"Mon 6:00 AM ET" },
+  { platform:"Google DV360", budget:"$94K", strategy:"Viewable CPM", bid:"$12.40 vCPM", audiences:5, start:"Mon 8:00 AM ET" },
+  { platform:"The Trade Desk", budget:"$56K", strategy:"CPC Optimize", bid:"$4.20 CPC", audiences:3, start:"Tue 6:00 AM ET" },
+  { platform:"Reddit", budget:"$18K", strategy:"Engagement", bid:"$6.80 CPE", audiences:1, start:"Mon 12:00 PM ET" },
+];
+
+const performanceData = [
+  { metric:"Impressions", value:"4.2M", change:"+12%", status:"on-track" },
+  { metric:"Click-Through Rate", value:"2.8%", change:"+0.4pp", status:"above" },
+  { metric:"Cost per Lead", value:"$127", change:"-8%", status:"above" },
+  { metric:"Marketing Qualified Leads", value:"342", change:"+18%", status:"on-track" },
+  { metric:"Pipeline Influenced", value:"$4.8M", change:"+22%", status:"above" },
+];
+
+const anomalies = [
+  { type:"Underperformance", detail:"Variant C on LinkedIn \u2014 CTR dropped 40% among IT Decision Makers in the Midwest", action:"Pause and substitute with Variant D for this segment", severity:"High" },
+  { type:"Overspend", detail:"Meta CPA exceeding target by 25% for Lookalike segment", action:"Reduce bid cap to $72; shift $8K to LinkedIn", severity:"Medium" },
+  { type:"Opportunity", detail:"Reddit tech influencer segment outperforming 3x vs. forecast", action:"Increase budget allocation by $12K from underperforming channels", severity:"Low" },
+];
+
+const leadData = [
+  { account:"Pfizer Inc.", contact:"Sarah Chen, VP Digital", score:98, partner:"\u2014", action:"Schedule exec briefing; share Pharma AI case study", status:"Hot" },
+  { account:"Amgen Inc.", contact:"Raj Patel, CTO", score:94, partner:"Deloitte", action:"Joint discovery call; prep co-branded deck", status:"Hot" },
+  { account:"Roche Holding AG", contact:"Klaus Weber, Dir IT", score:91, partner:"Kyndryl", action:"Technical deep-dive; share architecture reference", status:"Warm" },
+  { account:"Bristol-Myers", contact:"Lisa Park, SVP Ops", score:87, partner:"HCLTech", action:"ROI workshop invitation; share benchmark data", status:"Warm" },
+  { account:"Gilead Sciences", contact:"Tom Rivera, CIO", score:82, partner:"Wipro", action:"Nurture with whitepaper series; invite to webinar", status:"Developing" },
+];
+
+// --- Shared styles ---
+const thStyle = { padding:"10px 14px", textAlign:"left", fontSize:11, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.05em", borderBottom:"2px solid #e2e8f0", backgroundColor:"#f8fafc", whiteSpace:"nowrap" };
+const tdStyle = { padding:"10px 14px", borderBottom:"1px solid #f1f5f9", verticalAlign:"middle" };
+const cardStyle = { background:"#fff", borderRadius:10, padding:18, border:"1px solid #e2e8f0", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" };
+
+// --- Utility components ---
+function ScoreRing({ value, size=40, color="#2563eb" }) {
+  const r=(size-6)/2, circ=2*Math.PI*r, offset=circ*(1-value/100);
+  return (
+    <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={4}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={4} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"/>
+      <text x={size/2} y={size/2} textAnchor="middle" dominantBaseline="central" fill="#1e293b" fontSize={11} fontWeight={700} style={{transform:"rotate(90deg)",transformOrigin:"center"}}>{value}</text>
+    </svg>
+  );
+}
+
+function Badge({ label, variant="default" }) {
+  const styles = { hot:{bg:"#fef2f2",color:"#dc2626",border:"#fecaca"}, warm:{bg:"#fff7ed",color:"#ea580c",border:"#fed7aa"}, developing:{bg:"#f0fdf4",color:"#16a34a",border:"#bbf7d0"}, clear:{bg:"#f0fdf4",color:"#16a34a",border:"#bbf7d0"}, review:{bg:"#fffbeb",color:"#d97706",border:"#fde68a"}, high:{bg:"#fef2f2",color:"#dc2626",border:"#fecaca"}, medium:{bg:"#fff7ed",color:"#ea580c",border:"#fed7aa"}, low:{bg:"#eff6ff",color:"#2563eb",border:"#bfdbfe"}, named:{bg:"#eff6ff",color:"#1d4ed8",border:"#bfdbfe"}, select:{bg:"#f5f3ff",color:"#7c3aed",border:"#ddd6fe"}, above:{bg:"#f0fdf4",color:"#16a34a",border:"#bbf7d0"}, "on-track":{bg:"#eff6ff",color:"#2563eb",border:"#bfdbfe"}, default:{bg:"#f1f5f9",color:"#475569",border:"#e2e8f0"} };
+  const s = styles[variant] || styles[label&&label.toLowerCase()] || styles.default;
+  return <span style={{display:"inline-block",padding:"2px 10px",borderRadius:999,fontSize:11,fontWeight:600,backgroundColor:s.bg,color:s.color,border:"1px solid "+s.border,letterSpacing:"0.01em",textTransform:"capitalize",whiteSpace:"nowrap"}}>{label}</span>;
+}
+
+function ProgressBar({ value, color="#2563eb", height=6 }) {
+  return <div style={{width:"100%",height,backgroundColor:"#e5e7eb",borderRadius:height}}><div style={{width:value+"%",height:"100%",backgroundColor:color,borderRadius:height,transition:"width 0.8s ease"}}/></div>;
+}
+
+function DonutChart({ segments, size=120 }) {
+  const total=segments.reduce((a,b)=>a+b.value,0); let cumulative=0; const r=44,circ=2*Math.PI*r;
+  return (
+    <svg width={size} height={size} viewBox="0 0 120 120">
+      {segments.map((seg,i)=>{ const pct=seg.value/total,offset=circ*cumulative; cumulative+=pct; return <circle key={i} cx={60} cy={60} r={r} fill="none" stroke={seg.color} strokeWidth={14} strokeDasharray={circ*pct+" "+circ*(1-pct)} strokeDashoffset={-offset} style={{transform:"rotate(-90deg)",transformOrigin:"center"}}/>; })}
+      <text x={60} y={56} textAnchor="middle" fill="#1e293b" fontSize={18} fontWeight={700}>{total.toLocaleString()}</text>
+      <text x={60} y={72} textAnchor="middle" fill="#94a3b8" fontSize={10} fontWeight={500}>total</text>
+    </svg>
+  );
+}
+
+function SummaryCard({ label, value, sub, color }) {
+  return <div style={cardStyle}><div style={{fontSize:11,fontWeight:600,color:"#94a3b8",textTransform:"uppercase",letterSpacing:"0.06em"}}>{label}</div><div style={{fontSize:28,fontWeight:800,color,marginTop:2,lineHeight:1}}>{value}</div><div style={{fontSize:12,color:"#64748b",marginTop:4}}>{sub}</div></div>;
+}
+
+// --- Step screens ---
+function Step1Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Named Accounts" value="62" sub="High-priority targets" color="#1d4ed8"/><SummaryCard label="Select Accounts" value="854" sub="Propensity-scored" color="#7c3aed"/><SummaryCard label="Avg. Propensity Score" value="84" sub="Out of 100" color="#059669"/></div>
+    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Account","Type","Propensity","Intent Signals","Industry"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{accountData.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.name}</span></td><td style={tdStyle}><Badge label={a.type} variant={a.type.toLowerCase()}/></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:8}}><ProgressBar value={a.score} color={a.score>85?"#2563eb":"#7c3aed"}/><span style={{fontSize:12,fontWeight:700,color:"#334155",minWidth:24}}>{a.score}</span></div></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.signals}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{a.industry}</span></td></tr>)}</tbody></table></div>
+    <div style={{fontSize:12,color:"#94a3b8",textAlign:"right"}}>Showing 10 of 916 accounts &bull; Sorted by propensity score</div>
+  </div>);
+}
+
+function Step2Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Partners Recommended" value="6" sub="Across all segments" color="#1d4ed8"/><SummaryCard label="Accounts Covered" value="854" sub="100% of Select accounts" color="#059669"/><SummaryCard label="Avg. Partner Fit" value="89%" sub="Based on capability match" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Partner","Accounts Assigned","Fit Score","Specialty","Selling Guidance"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{partnerData.map((p,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{p.partner}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{p.accounts}</span></td><td style={tdStyle}><ScoreRing value={p.fit} color={p.fit>90?"#2563eb":"#7c3aed"}/></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{p.specialty}</span></td><td style={{...tdStyle,maxWidth:260}}><span style={{color:"#64748b",fontSize:12,lineHeight:1.4}}>{p.guidance}</span></td></tr>)}</tbody></table></div>
+  </div>);
+}
+
+function Step3Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+      <div style={cardStyle}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Total Addressable Audience</div><div style={{fontSize:32,fontWeight:800,color:"#0f172a",marginTop:4}}>87,000</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>Across 5 segments &bull; 3 platforms</div></div><DonutChart segments={[{value:12400,color:"#2563eb"},{value:8700,color:"#7c3aed"},{value:2100,color:"#059669"},{value:18600,color:"#f59e0b"},{value:45200,color:"#e5e7eb"}]}/></div></div>
+      <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1}}>Synthetic Profile Test Results</div><div style={{marginTop:12,display:"flex",flexDirection:"column",gap:10}}>{[{label:"Message resonance",value:88,color:"#2563eb"},{label:"Channel-audience fit",value:91,color:"#059669"},{label:"Predicted engagement",value:76,color:"#7c3aed"}].map(m=><div key={m.label}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:"#475569"}}>{m.label}</span><span style={{fontWeight:700,color:"#0f172a"}}>{m.value}%</span></div><ProgressBar value={m.value} color={m.color} height={8}/></div>)}</div></div>
+    </div>
+    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Audience Segment","Est. Size","Channels","Match Score"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{audienceSegments.map((a,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{a.segment}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#1d4ed8"}}>{a.size}</span></td><td style={tdStyle}><div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{a.channels.map(c=><span key={c} style={{fontSize:11,padding:"2px 8px",borderRadius:4,backgroundColor:"#f1f5f9",color:"#475569",fontWeight:500}}>{c}</span>)}</div></td><td style={tdStyle}><ScoreRing value={a.match} color={a.match>90?"#059669":a.match>80?"#2563eb":"#94a3b8"}/></td></tr>)}</tbody></table></div>
+  </div>);
+}
+
+function Step4Screen() {
+  const gradients=["linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)","linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)","linear-gradient(135deg, #059669 0%, #34d399 100%)","linear-gradient(135deg, #0891b2 0%, #67e8f9 100%)","linear-gradient(135deg, #d97706 0%, #fbbf24 100%)"];
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Creative Variants" value="5" sub="Across 3 formats" color="#1d4ed8"/><SummaryCard label="Legal Cleared" value="4 of 5" sub="1 pending review" color="#059669"/><SummaryCard label="Avg. Brand Score" value="93" sub="Above 90 threshold" color="#7c3aed"/></div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>{creativeVariants.map((c,i)=><div key={i} style={{...cardStyle,display:"flex",gap:16,alignItems:"center"}}><div style={{width:100,height:68,borderRadius:8,flexShrink:0,background:gradients[i],display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:20,fontWeight:800}}>{c.format.includes("Video")? "\u25B6":c.format.includes("Carousel")? "\u25E7":"\u25A3"}</div><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><span style={{fontWeight:700,color:"#0f172a",fontSize:13}}>Variant {c.id}</span><span style={{fontSize:11,color:"#94a3b8"}}>&bull;</span><span style={{fontSize:12,color:"#64748b"}}>{c.format}</span></div><div style={{fontSize:13,color:"#334155",lineHeight:1.4}}>"{c.headline}"</div></div><div style={{display:"flex",gap:16,alignItems:"center",flexShrink:0}}><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Predicted CTR</div><div style={{fontSize:18,fontWeight:800,color:c.predicted>3.5?"#059669":"#1d4ed8"}}>{c.predicted}%</div></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Brand</div><ScoreRing value={c.brand} size={36} color={c.brand>94?"#059669":"#f59e0b"}/></div><div style={{textAlign:"center"}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Legal</div><Badge label={c.legal} variant={c.legal.toLowerCase()}/></div></div></div>)}</div>
+  </div>);
+}
+
+function Step5Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Language Markets" value="4" sub="North America focus" color="#1d4ed8"/><SummaryCard label="Assets Localized" value="44" sub="Across all markets" color="#059669"/><SummaryCard label="Ready for Review" value="44" sub="All ready" color="#7c3aed"/></div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>{localizedAssets.map((a,i)=><div key={i} style={{...cardStyle,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{flex:1}}><div style={{fontWeight:700,color:"#0f172a",fontSize:14}}>{a.region}</div><div style={{fontSize:12,color:"#64748b",marginTop:2}}>{a.language} &bull; {a.assets} assets</div><div style={{fontSize:12,color:"#94a3b8",marginTop:6,lineHeight:1.4,fontStyle:"italic"}}>{a.notes}</div></div><div style={{display:"flex",gap:12,alignItems:"center",flexShrink:0}}><Badge label={a.status==="Ready for review"?"Ready":"In Progress"} variant={a.status==="Ready for review"?"clear":"review"}/><div style={{display:"flex",gap:4}}><div style={{width:48,height:32,borderRadius:4,backgroundColor:"#e0e7ff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#4338ca",fontWeight:600}}>EN</div><div style={{fontSize:14,color:"#cbd5e1",alignSelf:"center"}}>&rarr;</div><div style={{width:48,height:32,borderRadius:4,backgroundColor:"#fef3c7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#92400e",fontWeight:600}}>{a.language.slice(0,2).toUpperCase()}</div></div></div></div>)}</div>
+  </div>);
+}
+
+function Step6Screen() {
+  const alloc=[{label:"LinkedIn",pct:37.6,color:"#2563eb"},{label:"Google DV360",pct:24.9,color:"#7c3aed"},{label:"Meta",pct:18.0,color:"#059669"},{label:"The Trade Desk",pct:14.8,color:"#f59e0b"},{label:"Reddit",pct:4.8,color:"#ef4444"}];
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Total Budget" value="$378K" sub="Across 5 platforms" color="#1d4ed8"/><SummaryCard label="Audiences Deployed" value="16" sub="Across all platforms" color="#059669"/><SummaryCard label="Launch Window" value="Mon 6AM" sub="Staggered by platform" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Platform","Budget","Bid Strategy","Bid","Audiences","Launch Time"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{bidStrategies.map((b,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{b.platform}</span></td><td style={tdStyle}><span style={{fontWeight:700,color:"#059669"}}>{b.budget}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{b.strategy}</span></td><td style={tdStyle}><span style={{fontWeight:600,color:"#1d4ed8",fontSize:12}}>{b.bid}</span></td><td style={tdStyle}><span style={{fontWeight:700}}>{b.audiences}</span></td><td style={tdStyle}><span style={{color:"#64748b",fontSize:12}}>{b.start}</span></td></tr>)}</tbody></table></div>
+    <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Budget Allocation</div><div style={{display:"flex",borderRadius:8,overflow:"hidden",height:28}}>{alloc.map(s=><div key={s.label} style={{width:s.pct+"%",backgroundColor:s.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#fff",fontWeight:700,whiteSpace:"nowrap",overflow:"hidden"}} title={s.label+": "+s.pct+"%"}>{s.pct>10?s.label+" "+s.pct+"%":""}</div>)}</div><div style={{display:"flex",gap:16,marginTop:10,flexWrap:"wrap"}}>{alloc.map(s=><div key={s.label} style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"#64748b"}}><div style={{width:8,height:8,borderRadius:2,backgroundColor:s.color}}/>{s.label}</div>)}</div></div>
+  </div>);
+}
+
+function Step7Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(5, 1fr)",gap:10}}>{performanceData.map(p=><div key={p.metric} style={{...cardStyle,textAlign:"center",padding:14}}><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:0.5}}>{p.metric}</div><div style={{fontSize:22,fontWeight:800,color:"#0f172a",marginTop:4}}>{p.value}</div><div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:4}}><span style={{fontSize:12,fontWeight:700,color:p.status==="above"?"#059669":"#2563eb"}}>{p.change}</span><Badge label={p.status==="above"?"Above target":"On track"} variant={p.status}/></div></div>)}</div>
+    <div><div style={{fontSize:14,fontWeight:700,color:"#0f172a",marginBottom:10}}>Anomalies & Suggested Actions</div><div style={{display:"flex",flexDirection:"column",gap:10}}>{anomalies.map((a,i)=><div key={i} style={{...cardStyle,borderLeft:"4px solid "+(a.severity==="High"?"#dc2626":a.severity==="Medium"?"#f59e0b":"#2563eb"),display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:16}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}><Badge label={a.severity} variant={a.severity.toLowerCase()}/><span style={{fontWeight:700,color:"#0f172a",fontSize:13}}>{a.type}</span></div><div style={{fontSize:13,color:"#334155",lineHeight:1.4,marginBottom:6}}>{a.detail}</div><div style={{fontSize:12,color:"#2563eb",fontWeight:600}}>{"\u26A1"} Recommended: {a.action}</div></div></div>)}</div></div>
+  </div>);
+}
+
+function Step8Screen() {
+  return (<div style={{display:"flex",flexDirection:"column",gap:20}}>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}}><SummaryCard label="Qualified Leads" value="47" sub="Ready for sales outreach" color="#1d4ed8"/><SummaryCard label="Pipeline Value" value="$6.2M" sub="Estimated opportunity" color="#059669"/><SummaryCard label="Partner-Sourced" value="28%" sub="Via activated partners" color="#7c3aed"/></div>
+    <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:0,fontSize:13}}><thead><tr>{["Account","Contact","Lead Score","Partner","Recommended Action","Status"].map(h=><th key={h} style={thStyle}>{h}</th>)}</tr></thead><tbody>{leadData.map((l,i)=><tr key={i} style={{backgroundColor:i%2===0?"#fff":"#f8fafc"}}><td style={tdStyle}><span style={{fontWeight:600,color:"#0f172a"}}>{l.account}</span></td><td style={tdStyle}><span style={{color:"#475569",fontSize:12}}>{l.contact}</span></td><td style={tdStyle}><div style={{display:"flex",alignItems:"center",gap:6}}><ScoreRing value={l.score} size={36} color={l.score>90?"#059669":"#2563eb"}/></div></td><td style={tdStyle}><span style={{color:l.partner==="\u2014"?"#94a3b8":"#1d4ed8",fontWeight:l.partner==="\u2014"?400:600,fontSize:12}}>{l.partner}</span></td><td style={{...tdStyle,maxWidth:240}}><span style={{color:"#334155",fontSize:12,lineHeight:1.4}}>{l.action}</span></td><td style={tdStyle}><Badge label={l.status} variant={l.status.toLowerCase()}/></td></tr>)}</tbody></table></div>
+    <div style={cardStyle}><div style={{fontSize:12,color:"#94a3b8",fontWeight:600,textTransform:"uppercase",letterSpacing:1,marginBottom:10}}>Pipeline Gap Closure Progress</div><div style={{display:"flex",alignItems:"center",gap:12}}><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:6}}><span style={{color:"#475569"}}>Gap closed</span><span style={{fontWeight:700,color:"#059669"}}>73% ($6.2M of $8.5M target)</span></div><div style={{width:"100%",height:16,backgroundColor:"#e5e7eb",borderRadius:10,overflow:"hidden",position:"relative"}}><div style={{width:"73%",height:"100%",background:"linear-gradient(90deg, #2563eb, #059669)",borderRadius:10,transition:"width 1s ease"}}/><div style={{position:"absolute",right:"27%",top:-2,width:2,height:20,backgroundColor:"#dc2626"}}/></div><div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginTop:4,color:"#94a3b8"}}><span>$0</span><span style={{color:"#dc2626",fontWeight:600}}>Target: $8.5M</span></div></div></div></div>
+  </div>);
+}
+
+// --- Loading animations ---
+const LOADING_CONFIGS = [
+  { label:"Scanning account databases", sub:"Analyzing propensity signals across 916 accounts...", color:"#2563eb" },
+  { label:"Matching partner capabilities", sub:"Evaluating fit scores for 6 strategic partners...", color:"#7c3aed" },
+  { label:"Segmenting target audiences", sub:"Clustering 87,000 profiles across 5 segments...", color:"#059669" },
+  { label:"Generating creative variants", sub:"Producing and testing 5 variants against synthetic audiences...", color:"#0891b2" },
+  { label:"Translating and localizing", sub:"Adapting 44 assets across 4 language markets...", color:"#d97706" },
+  { label:"Configuring deployment", sub:"Setting bid strategies across 5 platforms...", color:"#dc2626" },
+  { label:"Analyzing performance data", sub:"Processing 4.2M impressions for anomalies...", color:"#059669" },
+  { label:"Routing qualified leads", sub:"Scoring and assigning 47 leads to sellers...", color:"#1d4ed8" },
+];
+
+function LoaderShell({ children, label, sub, color, progress }) {
+  return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"60px 20px",gap:24}}>
+    <div style={{position:"relative",width:120,height:120}}>{children}</div>
+    <div style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,color:"#0f172a",marginBottom:6}}>{label}</div><div style={{fontSize:12,color:"#94a3b8",maxWidth:320}}>{sub}</div></div>
+    <div style={{width:240,height:4,backgroundColor:"#e5e7eb",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",backgroundColor:color,borderRadius:4,width:progress+"%",transition:"width 0.3s ease"}}/></div>
+    <div style={{display:"flex",gap:4,alignItems:"center"}}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:3,backgroundColor:color,animation:"typing-dots 1.2s "+i*0.2+"s infinite ease-in-out"}}/>)}<span style={{fontSize:11,color:"#94a3b8",marginLeft:6,fontWeight:600}}>AI Processing</span></div>
+  </div>);
+}
+
+function Loader1({progress}){const cfg=LOADING_CONFIGS[0];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#eff6ff,#dbeafe)",border:"1px solid #bfdbfe",overflow:"hidden",position:"relative"}}><div style={{position:"absolute",left:0,right:0,height:2,backgroundColor:"#2563eb",opacity:.6,animation:"scan-line 1.5s ease-in-out infinite",zIndex:2}}/>{[0,1,2,3].map(col=><div key={col} style={{position:"absolute",left:10+col*28,top:0,bottom:0,overflow:"hidden",width:22}}><div style={{animation:"number-scroll "+(1.8+col*.3)+"s linear infinite",fontFamily:"monospace",fontSize:11,color:"#2563eb",opacity:.6+col*.1,lineHeight:"18px"}}>{Array.from({length:20},(_,i)=><div key={i}>{String(Math.floor(Math.random()*100)).padStart(2,"0")}</div>)}</div></div>)}</div></LoaderShell>);}
+
+function Loader2({progress}){const cfg=LOADING_CONFIGS[1],colors=["#2563eb","#7c3aed","#059669","#f59e0b","#dc2626","#0891b2"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,position:"relative"}}><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:28,height:28,borderRadius:14,background:"linear-gradient(135deg,#7c3aed,#a78bfa)",boxShadow:"0 0 20px rgba(124,58,237,0.3)",animation:"pulse-glow 2s infinite"}}/>{colors.map((c,i)=><div key={i} style={{position:"absolute",top:"50%",left:"50%",width:0,height:0}}><div style={{animation:"orbit "+(3+i*.4)+"s "+i*.3+"s linear infinite"}}><div style={{width:12,height:12,borderRadius:6,backgroundColor:c,boxShadow:"0 0 8px "+c+"44",marginLeft:-6,marginTop:-6}}/></div></div>)}</div></LoaderShell>);}
+
+function Loader3({progress}){const cfg=LOADING_CONFIGS[2],groups=[{x:25,y:30,color:"#2563eb"},{x:75,y:25,color:"#7c3aed"},{x:50,y:70,color:"#059669"},{x:90,y:65,color:"#f59e0b"}];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#f0fdf4,#dcfce7)",border:"1px solid #bbf7d0",position:"relative",overflow:"hidden"}}>{groups.map((g,gi)=>Array.from({length:5},(_,di)=><div key={gi+"-"+di} style={{position:"absolute",left:g.x+(di-2)*5,top:g.y+(di%3-1)*6,width:8,height:8,borderRadius:4,backgroundColor:g.color,opacity:.5+di*.1,animation:"dot-cluster "+(1.5+di*.2)+"s "+(gi*.2+di*.1)+"s ease-in-out infinite"}}/>))}</div></LoaderShell>);}
+
+function Loader4({progress}){const cfg=LOADING_CONFIGS[3],g=["#1d4ed8","#7c3aed","#059669","#0891b2","#d97706"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"#f8fafc",border:"1px solid #e2e8f0",overflow:"hidden",display:"grid",gridTemplateColumns:"repeat(8,1fr)",gridTemplateRows:"repeat(8,1fr)",gap:1,padding:4}}>{Array.from({length:64},(_,i)=>{const row=Math.floor(i/8),col=i%8,delay=row*.08+col*.06;return<div key={i} style={{borderRadius:2,backgroundColor:g[i%g.length],animation:"pulse-glow "+(1.2+(i%4)*.2)+"s "+delay+"s infinite",opacity:0,animationFillMode:"both"}}/>;})}</div></LoaderShell>);}
+
+function Loader5({progress}){const cfg=LOADING_CONFIGS[4],langs=[{chars:"EN",bg:"#e0e7ff",color:"#4338ca"},{chars:"ES",bg:"#fef3c7",color:"#92400e"},{chars:"FR",bg:"#fce7f3",color:"#9d174d"},{chars:"PA",bg:"#d1fae5",color:"#065f46"},{chars:"ZH",bg:"#fee2e2",color:"#991b1b"}];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center",justifyContent:"center",padding:10}}>{langs.map((l,i)=><div key={i} style={{width:46,height:34,borderRadius:8,backgroundColor:l.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:l.color,animation:"morph-text 2s "+i*.3+"s infinite",border:"1px solid "+l.color+"22"}}>{l.chars}</div>)}<div style={{width:46,height:34,borderRadius:8,border:"2px dashed #cbd5e1",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:14,height:14,borderRadius:7,border:"2px solid #94a3b8",borderTopColor:"transparent",animation:"spin-ring .8s linear infinite"}}/></div></div></LoaderShell>);}
+
+function Loader6({progress}){const cfg=LOADING_CONFIGS[5],platforms=["#2563eb","#7c3aed","#059669","#f59e0b","#ef4444"];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"linear-gradient(135deg,#0f172a,#1e293b)",border:"1px solid #334155",display:"flex",alignItems:"flex-end",justifyContent:"center",gap:6,padding:"12px 14px",position:"relative"}}><div style={{position:"absolute",top:12,left:0,right:0,textAlign:"center",fontSize:10,color:"#60a5fa",fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>LAUNCH</div>{platforms.map((c,i)=><div key={i} style={{width:12,height:60,borderRadius:3,backgroundColor:c,transformOrigin:"bottom",animation:"bar-grow "+(1.2+i*.15)+"s "+i*.15+"s ease-in-out infinite"}}/>)}</div></LoaderShell>);}
+
+function Loader7({progress}){const cfg=LOADING_CONFIGS[6];return(<LoaderShell {...cfg} progress={progress}><div style={{width:120,height:120,borderRadius:16,background:"#fff",border:"1px solid #e2e8f0",display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,padding:8}}>{[{color:"#2563eb",val:"4.2M"},{color:"#059669",val:"2.8%"},{color:"#7c3aed",val:"$127"},{color:"#f59e0b",val:"342"}].map((m,i)=><div key={i} style={{borderRadius:6,backgroundColor:m.color+"0a",border:"1px solid "+m.color+"22",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:4,animation:"pulse-glow 1.5s "+i*.3+"s infinite"}}><div style={{fontSize:12,fontWeight:800,color:m.color}}>{m.val}</div><div style={{width:"80%",height:2,backgroundColor:m.color,borderRadius:1,marginTop:3,opacity:.4}}><div style={{height:"100%",backgroundColor:m.color,borderRadius:1,animation:"progress-sweep 2s "+i*.2+"s infinite"}}/></div></div>)}</div></LoaderShell>);}
+
+function Loader8({progress}){const cfg=LOADING_CONFIGS[7];return(<LoaderShell {...cfg} progress={progress}><svg width="120" height="120" viewBox="0 0 120 120"><rect x="0" y="0" width="120" height="120" rx="16" fill="#eff6ff" stroke="#bfdbfe" strokeWidth="1"/><circle cx="60" cy="60" r="14" fill="#2563eb" opacity="0.9"><animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite"/></circle><text x="60" y="64" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700">AI</text>{[{x:20,y:20,color:"#dc2626"},{x:100,y:20,color:"#059669"},{x:20,y:100,color:"#7c3aed"},{x:100,y:100,color:"#f59e0b"}].map((t,i)=><g key={i}><line x1="60" y1="60" x2={t.x} y2={t.y} stroke={t.color} strokeWidth="1.5" strokeDasharray="4 3" opacity="0.4"><animate attributeName="stroke-dashoffset" values="200;0" dur={(2+i*.3)+"s"} repeatCount="indefinite"/></line><circle cx={t.x} cy={t.y} r="8" fill={t.color} opacity="0.8"><animate attributeName="opacity" values="0.4;0.9;0.4" dur={(1.5+i*.2)+"s"} begin={i*.3+"s"} repeatCount="indefinite"/></circle></g>)}</svg></LoaderShell>);}
+
+const STEP_SCREENS = [Step1Screen,Step2Screen,Step3Screen,Step4Screen,Step5Screen,Step6Screen,Step7Screen,Step8Screen];
+const STEP_LOADERS = [Loader1,Loader2,Loader3,Loader4,Loader5,Loader6,Loader7,Loader8];
+const STEP_ICONS = ["\uD83C\uDFAF","\uD83E\uDD1D","\uD83D\uDC65","\uD83C\uDFA8","\uD83C\uDF10","\uD83D\uDE80","\uD83D\uDCCA","\uD83D\uDCEC"];
+
+function App() {
+  const [activeStep, setActiveStep] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    setAnimKey(k => k + 1);
+    setLoading(true);
+    setProgress(0);
+    const steps = [{pct:25,delay:300},{pct:55,delay:700},{pct:80,delay:1200},{pct:95,delay:1600},{pct:100,delay:1900}];
+    const timers = steps.map(s => setTimeout(() => setProgress(s.pct), s.delay));
+    const doneTimer = setTimeout(() => setLoading(false), 2200);
+    return () => { timers.forEach(clearTimeout); clearTimeout(doneTimer); };
+  }, [activeStep]);
+
+  const step = STEPS[activeStep];
+  const StepScreen = STEP_SCREENS[activeStep];
+  const StepLoader = STEP_LOADERS[activeStep];
+
+  return (
+    <div style={{fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",minHeight:"100vh",background:"linear-gradient(180deg,#f0f4f8 0%,#e2e8f0 100%)",color:"#0f172a"}}>
+      <div style={{background:"linear-gradient(135deg,#0f172a 0%,#1e293b 100%)",padding:"24px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div><div style={{fontSize:11,color:"#60a5fa",fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>XYZ Marketing &bull; Agentic Workflow</div><div style={{fontSize:22,fontWeight:800,color:"#fff",marginTop:4,letterSpacing:"-0.02em"}}>Pipeline Gap Response &mdash; AI Productivity Software, North America</div></div>
+        <div style={{padding:"8px 16px",borderRadius:8,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.25)"}}><div style={{fontSize:10,color:"#93c5fd",fontWeight:600,textTransform:"uppercase"}}>Trigger</div><div style={{fontSize:13,color:"#bfdbfe",fontWeight:600,marginTop:2}}>30% pipeline gap detected</div></div>
+      </div>
+
+      <div style={{padding:"16px 32px 0",overflowX:"auto"}}>
+        <div style={{display:"flex",gap:4,minWidth:"fit-content"}}>
+          {STEPS.map((s,i) => {
+            const isActive = i === activeStep, isPast = i < activeStep;
+            return (<button key={i} onClick={() => setActiveStep(i)} style={{flex:"1 1 0",minWidth:120,padding:"10px 12px",border:"none",borderRadius:"10px 10px 0 0",cursor:"pointer",background:isActive?"#fff":isPast?"rgba(37,99,235,0.06)":"transparent",transition:"all 0.2s ease",boxShadow:isActive?"0 -2px 8px rgba(0,0,0,0.06)":"none",position:"relative"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,justifyContent:"center"}}><span style={{fontSize:16}}>{STEP_ICONS[i]}</span><span style={{fontSize:12,fontWeight:isActive?800:600,color:isActive?"#1d4ed8":isPast?"#2563eb":"#94a3b8",whiteSpace:"nowrap"}}>{s.id}. {s.title}</span></div>
+              <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{s.time}</div>
+              {isActive && <div style={{position:"absolute",bottom:0,left:12,right:12,height:3,backgroundColor:"#2563eb",borderRadius:"3px 3px 0 0"}}/>}
+            </button>);
+          })}
+        </div>
+      </div>
+
+      <div style={{padding:"0 32px 32px"}}>
+        <div style={{background:"#fff",borderRadius:"0 0 16px 16px",boxShadow:"0 4px 24px rgba(0,0,0,0.06)",overflow:"hidden"}}>
+          <div style={{padding:"20px 28px",borderBottom:"1px solid #f1f5f9",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div><div style={{fontSize:18,fontWeight:800,color:"#0f172a",letterSpacing:"-0.01em"}}><span style={{color:"#2563eb"}}>Step {step.id}:</span> {step.title}</div><div style={{fontSize:13,color:"#64748b",marginTop:4,maxWidth:700,lineHeight:1.5}}><strong style={{color:"#475569"}}>AI presents:</strong> {step.aiSummary}</div></div>
+            <div style={{textAlign:"right",flexShrink:0,marginLeft:24}}><div style={{display:"flex",gap:12,alignItems:"center"}}><div><div style={{fontSize:10,color:"#94a3b8",fontWeight:600,textTransform:"uppercase"}}>Human Review</div><div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{step.humanTime}</div></div><div style={{width:40,height:40,borderRadius:10,background:"linear-gradient(135deg,#dbeafe,#eff6ff)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{"\uD83D\uDC64"}</div></div><div style={{fontSize:11,color:"#64748b",marginTop:4,maxWidth:200,textAlign:"right"}}>{step.humanAction}</div></div>
+          </div>
+
+          <div key={animKey} style={{padding:28}}>
+            {loading ? <StepLoader progress={progress}/> : <div style={{animation:"fade-in-up 0.4s ease-out"}}><StepScreen/></div>}
+          </div>
+
+          <div style={{padding:"16px 28px",borderTop:"1px solid #f1f5f9",background:"#fafbfc",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontSize:12,color:"#94a3b8"}}>AI confidence: <strong style={{color:"#059669"}}>High</strong> &bull; {step.time} elapsed</div>
+            <div style={{display:"flex",gap:10}}>
+              <button style={{padding:"8px 20px",border:"1px solid #e2e8f0",borderRadius:8,background:"#fff",color:"#64748b",fontSize:13,fontWeight:600,cursor:"pointer"}}>Request Changes</button>
+              <button onClick={() => activeStep < 7 && setActiveStep(activeStep + 1)} style={{padding:"8px 24px",border:"none",borderRadius:8,background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(37,99,235,0.3)"}}>{activeStep < 7 ? "Approve & Continue \u2192" : "\u2713 Workflow Complete"}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
