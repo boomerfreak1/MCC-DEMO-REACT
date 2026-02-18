@@ -420,8 +420,8 @@ function App() {
           <div style={{padding:m?"12px 16px":"16px 28px",borderTop:"1px solid #f1f5f9",background:"#fafbfc",display:"flex",flexDirection:m?"column":"row",justifyContent:"space-between",alignItems:"center",gap:m?10:0}}>
             <div style={{fontSize:m?11:12,color:"#94a3b8",textAlign:m?"center":"left"}}>AI confidence: <strong style={{color:"#059669"}}>High</strong> &bull; {step.time} elapsed</div>
             <div style={{display:"flex",gap:m?8:10,width:m?"100%":"auto"}}>
-              <button style={{padding:m?"10px 16px":"8px 20px",border:"1px solid #e2e8f0",borderRadius:8,background:"#fff",color:"#64748b",fontSize:m?12:13,fontWeight:600,cursor:"pointer",flex:m?1:"none"}}>Request Changes</button>
-              <button onClick={() => activeStep < 7 && setActiveStep(activeStep + 1)} style={{padding:m?"10px 16px":"8px 24px",border:"none",borderRadius:8,background:"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:m?12:13,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(37,99,235,0.3)",flex:m?1:"none"}}>{activeStep < 7 ? "Approve & Continue \u2192" : "\u2713 Workflow Complete"}</button>
+              <button disabled={loading} style={{padding:m?"10px 16px":"8px 20px",border:"1px solid #e2e8f0",borderRadius:8,background:"#fff",color:loading?"#cbd5e1":"#64748b",fontSize:m?12:13,fontWeight:600,cursor:loading?"not-allowed":"pointer",opacity:loading?0.5:1,transition:"all 0.3s ease",flex:m?1:"none"}}>Request Changes</button>
+              <button disabled={loading} onClick={() => !loading && activeStep < 7 && setActiveStep(activeStep + 1)} style={{padding:m?"10px 16px":"8px 24px",border:"none",borderRadius:8,background:loading?"linear-gradient(135deg,#93c5fd,#60a5fa)":"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",fontSize:m?12:13,fontWeight:700,cursor:loading?"not-allowed":"pointer",boxShadow:loading?"none":"0 2px 8px rgba(37,99,235,0.3)",opacity:loading?0.5:1,transition:"all 0.3s ease",flex:m?1:"none"}}>{activeStep < 7 ? "Approve & Continue \u2192" : "\u2713 Workflow Complete"}</button>
             </div>
           </div>
         </div>
